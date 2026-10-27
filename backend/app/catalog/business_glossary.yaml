@@ -1,0 +1,114 @@
+tables:
+  categories:
+    description: Product category lookup.
+  customers:
+    description: Customer profile and signup attributes. Do not expose personal identifiers in examples.
+  products:
+    description: Products, category assignment, selling price, and cost.
+  orders:
+    description: Customer orders, order state, channel, shipping, and order discount.
+  order_items:
+    description: Product line items within an order, including quantity and line discount.
+  payments:
+    description: Payment attempts and their status and amount.
+  refunds:
+    description: Refund transactions associated with orders and optionally order items.
+
+columns:
+  categories.category_id:
+    description: Unique product category identifier.
+  categories.category_name:
+    description: Human-readable product category.
+  customers.customer_id:
+    description: Unique customer identifier.
+  customers.city:
+    description: Customer city; do not expose sample values.
+  customers.state:
+    description: Customer state or province; do not expose sample values.
+  customers.signup_date:
+    description: Date the customer signed up.
+  customers.created_at:
+    description: Timestamp when the customer record was created.
+  customers.email:
+    description: Customer email address; sensitive and never sample.
+  customers.customer_name:
+    description: Customer name; sensitive and never sample.
+  customers.region:
+    description: Broad sales region for a customer.
+    approved_sample_values: [Northeast, Southeast, Midwest, Southwest, West]
+  products.product_id:
+    description: Unique product identifier.
+  products.product_name:
+    description: Product display name.
+  products.category_id:
+    description: Category identifier for the product.
+  products.unit_price:
+    description: Customer-facing price per unit.
+  products.cost_price:
+    description: Internal cost per unit; do not expose sample values.
+  products.is_active:
+    description: Whether the product is currently active.
+  orders.order_id:
+    description: Unique order identifier.
+  orders.customer_id:
+    description: Customer who placed the order.
+  orders.order_date:
+    description: Date and time the order was placed.
+  orders.order_status:
+    description: Final order payment state.
+    approved_sample_values: [completed, payment_failed]
+  orders.shipping_amount:
+    description: Shipping charged for the order.
+  orders.discount_amount:
+    description: Order-level discount amount.
+  orders.sales_channel:
+    description: Channel through which the order was placed.
+    approved_sample_values: [online, in_store, marketplace, mobile]
+  order_items.order_item_id:
+    description: Unique order line-item identifier.
+  order_items.order_id:
+    description: Order containing this line item.
+  order_items.product_id:
+    description: Product referenced by this line item.
+  order_items.quantity:
+    description: Number of product units in this line item.
+  order_items.unit_price:
+    description: Unit price recorded for the line item.
+  order_items.discount_amount:
+    description: Discount applied to the line item.
+  payments.payment_id:
+    description: Unique payment attempt identifier.
+  payments.order_id:
+    description: Order associated with the payment attempt.
+  payments.payment_date:
+    description: Date and time of the payment attempt.
+  payments.payment_method:
+    description: Payment instrument category; never include account details.
+    approved_sample_values: [credit_card, debit_card, digital_wallet, bank_transfer]
+  payments.payment_status:
+    description: Outcome of the payment attempt.
+    approved_sample_values: [successful, failed]
+  payments.amount:
+    description: Amount captured or attempted by the payment.
+  refunds.refund_id:
+    description: Unique refund identifier.
+  refunds.order_id:
+    description: Order associated with the refund.
+  refunds.order_item_id:
+    description: Refunded order line item, when available.
+  refunds.refund_date:
+    description: Date and time the refund was issued.
+  refunds.refund_amount:
+    description: Amount returned to the customer.
+  refunds.refund_reason:
+    description: Free-text reason; potentially sensitive and never sample.
+
+metrics:
+  net_revenue:
+    description: Successful payment amount after subtracting refunds.
+    formula: SUM(successful payments.amount) - SUM(refunds.refund_amount)
+    caveat: Aggregate payments and refunds independently before subtracting to avoid join fan-out.
+  refund_rate:
+    description: Refunded successful-payment amount as a share of successful-payment amount.
+    formula: SUM(refunds.refund_amount) / SUM(successful payments.amount)
+    caveat: Aggregate refunds and successful payments independently; return NULL when successful payment amount is zero.

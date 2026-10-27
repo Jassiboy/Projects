@@ -1,0 +1,17 @@
+# Local environment and credentials
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test and tooling caches
+.pytest_cache/
+.pytest-tmp-*/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+mysql-connector-python
+pydantic-settings
+Faker
+pytest
+sqlglot
+PyYAML
+google-genai
