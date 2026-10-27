@@ -1,0 +1,688 @@
+<!--
+  Analyst AI browser client.
+  Collects database credentials, submits analysis requests, and renders grounded
+  answers, charts, tables, and editable SQL inside a continuous chat workspace.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Analyst AI: Inline Chat</title>
+  <style>
+    :root{--nav:#11192c;--rail:#0a1020;--ink:#1e2945;--muted:#7e89a0;--line:#e2e7f0;--purple:#6657f0;--cyan:#25bdba;--soft:#f5f7fc;--green:#10a37f}*{box-sizing:border-box}body{margin:0;background:#f2f4f9;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,textarea{font:inherit}.app{display:grid;grid-template-columns:72px 260px minmax(0,1fr);min-height:100vh;transition:grid-template-columns .22s ease}.app.collapsed{grid-template-columns:72px 0 minmax(0,1fr)}.rail{background:var(--rail);color:#8e99b0;padding:17px 10px;display:flex;flex-direction:column;align-items:center;gap:10px;z-index:4}.railmark{width:41px;height:41px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#6959f5,#2dcbc2);color:white;font-size:17px;margin-bottom:14px;box-shadow:0 10px 25px #4a42dc45}.railbtn{width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:#7f8ba4;cursor:pointer}.railbtn:hover,.railbtn.active{background:#ffffff10;color:white}.railgap{flex:1}.railavatar{width:33px;height:33px;border-radius:10px;border:1px solid #ffffff20;background:#222c44;color:white;font-size:9px}.side{background:var(--nav);color:#bac4d9;padding:19px 14px;display:flex;flex-direction:column;overflow:hidden;min-width:0;transition:opacity .16s}.app.collapsed .side{opacity:0;pointer-events:none}.sidehead{display:flex;align-items:center;justify-content:space-between;color:white;font-weight:800;padding:4px}.collapse{border:0;background:#ffffff0a;color:#8390a9;width:28px;height:28px;border-radius:8px;cursor:pointer}.new{margin:17px 0 10px;border:1px solid #ffffff20;background:#ffffff0c;color:white;border-radius:11px;padding:11px;font-weight:700;cursor:pointer}.search{display:flex;align-items:center;gap:7px;background:#0a1122;border:1px solid #ffffff0b;border-radius:9px;padding:8px 10px;margin-bottom:20px}.search input{min-width:0;width:100%;border:0;outline:0;background:transparent;color:white;font-size:10px}.label{font-size:9px;letter-spacing:1.4px;color:#66728d;margin:0 9px 7px}.nav{display:grid;gap:5px;margin-top:18px}.nav div{padding:9px 10px;border-radius:9px;font-size:11px}.nav .active{background:#ffffff0d;color:#fff}.recent{display:grid;gap:3px}.recent button{display:block;width:100%;text-align:left;border:0;background:transparent;color:#8793ad;border-radius:9px;padding:9px 10px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}.recent button:hover,.recent button.selected{background:#ffffff0d;color:white}.db{margin-top:auto;padding:11px;border:1px solid #ffffff12;border-radius:11px;background:#ffffff05;font-size:9px}.dot{display:inline-block;width:7px;height:7px;background:#2fd09d;border-radius:50%;margin-right:7px;box-shadow:0 0 0 4px #2fd09d18}.main{min-width:0;display:flex;flex-direction:column}.top{height:105px;background:linear-gradient(120deg,#e9eaff,#f7f8fc);display:flex;align-items:center;justify-content:space-between;padding:0 25px;border-bottom:1px solid #e6e9f1}.top h1{font-size:20px;margin:0 0 4px}.top p{margin:0;color:var(--muted);font-size:11px}.status{font-size:9px;border:1px solid white;background:#ffffffc7;padding:9px 12px;border-radius:999px}.page{padding:18px 20px 105px;max-width:1450px;width:100%;margin:auto}.userq{display:flex;align-items:center;gap:10px;margin-bottom:15px}.avatar{width:29px;height:29px;display:grid;place-items:center;border-radius:9px;background:#1f2941;color:white;font-size:9px}.bubble{font-size:11px;padding:10px 13px;background:white;border:1px solid var(--line);border-radius:4px 13px 13px 13px}.headline{display:flex;justify-content:space-between;align-items:end;margin-bottom:10px}.headline h2{font-size:16px;margin:0}.headline small{font-size:9px;color:var(--muted)}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric,.card{background:#fff;border:1px solid var(--line);border-radius:13px}.metric{padding:12px 14px}.metric small{color:var(--muted);font-size:9px}.metric b{display:block;margin-top:5px;font-size:17px}.grid{display:grid;grid-template-columns:1.2fr .9fr;gap:11px;margin-top:11px}.cardhead{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--line)}.cardhead b{font-size:11px}.cardhead span{font-size:9px;color:var(--muted)}.chart{height:190px;padding:25px 22px 28px;display:flex;align-items:flex-end;gap:6%;background:linear-gradient(to bottom,transparent 24%,#eef1f6 25%,transparent 25%,transparent 49%,#eef1f6 50%,transparent 50%,transparent 74%,#eef1f6 75%,transparent 75%)}.bar{flex:1;position:relative;border-radius:7px 7px 2px 2px;background:linear-gradient(#7768ff,#6152e8);transition:.25s}.bar:before{content:attr(data-v);position:absolute;top:-19px;width:100%;text-align:center;font-size:8px;color:#768197}.bar:after{content:attr(data-y);position:absolute;bottom:-20px;width:100%;text-align:center;font-size:8px;color:#768197}.sqlwrap{padding:11px 12px 0}.sqlbox{width:100%;height:116px;resize:vertical;border:0;outline:0;border-radius:10px;background:#161e31;color:#dce5f4;padding:12px;font:10px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.sqlmeta{display:flex;justify-content:space-between;align-items:center;padding:9px 2px 10px}.sqlstate{font-size:9px;color:var(--green)}.actions{display:flex;gap:6px}.ghost,.primary{border:0;border-radius:8px;padding:7px 10px;font-size:9px;font-weight:700;cursor:pointer}.ghost{background:#edf0f7;color:#526078}.primary{color:white;background:linear-gradient(135deg,var(--purple),var(--cyan))}.notice{display:none;margin-top:10px;border-radius:10px;padding:9px 11px;background:#eafaf5;color:#08795e;font-size:10px}.tablecard{margin-top:11px;overflow:hidden}table{border-collapse:collapse;width:100%;font-size:10px}th,td{text-align:left;padding:10px 13px;border-bottom:1px solid #edf0f5}th{font-size:8px;color:#8993a6;background:#fafbfc}tr:last-child td{border:0}.composer{position:fixed;left:352px;right:20px;bottom:15px;background:#ffffffdd;backdrop-filter:blur(14px);border:1px solid #e2e6ee;border-radius:17px;padding:9px 10px 9px 15px;box-shadow:0 16px 40px #27304b22;display:flex;align-items:center;gap:10px;transition:left .22s ease}.app.collapsed .composer{left:92px}.composer input{flex:1;border:0;outline:0;background:transparent;font-size:11px}.composer button{border:0;border-radius:11px;background:linear-gradient(135deg,var(--purple),var(--cyan));color:white;padding:9px 15px;font-size:10px;font-weight:700;cursor:pointer}.empty{display:none;text-align:center;padding:100px 20px}.empty .spark{width:55px;height:55px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,#6657f0,#25bdba);color:white;margin:auto;font-size:21px}.empty h2{font-size:19px;margin:17px 0 7px}.empty p{color:var(--muted);font-size:11px}.changed{color:#bd6b0b}.spinner{display:inline-block;width:10px;height:10px;border:2px solid #ffffff70;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:5px}@keyframes spin{to{transform:rotate(360deg)}}
+    .userq{flex-direction:row-reverse;justify-content:flex-start}.userq .bubble{max-width:min(72%,760px);background:#20293b;color:#fff;border-color:#20293b;border-radius:14px 4px 14px 14px;box-shadow:0 7px 18px #1520381a;line-height:1.5}.userq .avatar{background:linear-gradient(135deg,#273149,#11192c);box-shadow:0 5px 13px #19223821}.history{display:grid;gap:18px;margin-bottom:18px}.pastturn{border-bottom:1px solid #e4e8f0;padding-bottom:18px}.pastanswer,.directanswer{margin:8px 39px 0 0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:10px;line-height:1.65;color:#56627a}.pastanswer b,.directanswer b{display:block;color:#28334e;margin-bottom:3px}.directanswer{display:none;font-size:11px}.turntag{font-size:8px;color:#8994a7;margin-top:5px}.currentturn{scroll-margin-top:18px}.sql-card{margin-top:11px}.sql-card details summary,.pastsql summary{cursor:pointer;color:#4f5b74;font-size:9px;font-weight:700;list-style:none}.sql-card details summary:before,.pastsql summary:before{content:'›';display:inline-block;margin-right:6px;transition:.2s}.sql-card details[open] summary:before,.pastsql[open] summary:before{transform:rotate(90deg)}.pastsql{margin:8px 39px 0 0;background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:9px 11px}.pastsql pre{white-space:pre-wrap;background:#161e31;color:#dce5f4;border-radius:8px;padding:9px;font-size:8px;line-height:1.5;overflow:auto}.miniviz{margin:8px 39px 0 0;background:white;border:1px solid var(--line);border-radius:11px;padding:10px}.minibars{height:52px;display:flex;align-items:flex-end;gap:7px}.minibars i{flex:1;background:linear-gradient(#7768ff,#6152e8);border-radius:4px 4px 1px 1px}.minitable{width:calc(100% - 39px);margin:8px 39px 0 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}.minitable table{font-size:9px}.minitable th,.minitable td{padding:8px 10px}.answerlabel{margin:0 39px 6px 0;font-size:8px;color:#8b95a8;text-transform:uppercase;letter-spacing:1px}
+    .avatar{font-size:0}.avatar:after{content:'JS';font-size:8px}body{height:100vh;overflow:hidden}.app{height:100vh;min-height:0;overflow:hidden}.rail,.side,.main{height:100vh}.main{overflow:hidden}.top{flex:0 0 105px}.page{flex:1;min-height:0;overflow-y:auto;scroll-behavior:smooth;margin:0 auto}.grid{grid-template-columns:1fr}@media(max-width:980px){.app{grid-template-columns:64px 230px minmax(0,1fr)}.composer{left:314px}.metrics{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.app,.app.collapsed{grid-template-columns:58px minmax(0,1fr)}.side{display:none}.rail{padding:14px 7px}.composer,.app.collapsed .composer{left:68px;right:10px}.top{height:85px;flex-basis:85px;padding:0 15px}.page{padding:14px 12px 105px}.status{display:none}}@media(max-width:480px){.rail{display:none}.app,.app.collapsed{display:block}.main{height:100vh}.composer,.app.collapsed .composer{left:10px}.metrics{grid-template-columns:1fr 1fr}}
+  </style>
+  <style>
+    /* Professional visual pass: readable type, consistent rhythm, richer thumbnails */
+    :root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--radius-sm:10px;--radius-md:14px;--radius-lg:18px}
+    body{font-size:15px;line-height:1.5;background:#f5f6f8;color:#172033}
+    .app{grid-template-columns:76px 286px minmax(0,1fr)}.app.collapsed{grid-template-columns:76px 0 minmax(0,1fr)}
+    .rail{padding:20px 12px;gap:12px}.railmark{width:44px;height:44px;border-radius:14px;font-size:19px;margin-bottom:12px}.railbtn{width:44px;height:44px;border-radius:13px;font-size:17px}.railavatar{width:38px;height:38px;border-radius:12px;font-size:11px;font-weight:800}
+    .side{padding:22px 16px}.sidehead{font-size:16px;padding:2px 4px 4px}.collapse{width:32px;height:32px;font-size:16px}.new{margin:18px 0 12px;padding:12px 14px;border-radius:12px;font-size:13px;text-align:left}.search{padding:10px 12px;border-radius:11px;margin-bottom:23px}.search input{font-size:13px}.label{font-size:10px;letter-spacing:1.25px;margin:0 10px 8px}.recent{gap:5px}.recent button{position:relative;min-height:44px;padding:9px 10px 9px 43px;border-radius:11px;font-size:13px;line-height:1.25}.recent button:before{content:'↗';position:absolute;left:9px;top:8px;width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:linear-gradient(145deg,#2d3851,#202940);color:#b9c6df;font-size:11px}.recent button:nth-of-type(2n):before{content:'▦';background:linear-gradient(145deg,#263b4d,#18303c);color:#70d5ca}.recent button.selected:before{background:linear-gradient(135deg,#6d5cf3,#25bdb9);color:#fff}.nav{gap:7px;margin-top:20px}.nav div{padding:11px 12px;border-radius:10px;font-size:13px}.db{padding:13px;border-radius:12px;font-size:11px;line-height:1.55}
+    .top{height:112px;flex-basis:112px;padding:0 32px}.top h1{font-size:25px;letter-spacing:-.4px;margin-bottom:5px}.top p{font-size:14px}.status{font-size:11px;padding:10px 14px}.page{padding:26px 32px 130px;max-width:1280px}.history{gap:26px;margin-bottom:26px}.pastturn{padding-bottom:26px}.userq{gap:12px;margin-bottom:17px}.avatar{width:34px;height:34px;border-radius:11px}.avatar:after{font-size:10px}.bubble{font-size:15px;padding:12px 16px}.userq .bubble{border-radius:17px 5px 17px 17px;line-height:1.55}.pastanswer,.directanswer{margin:10px 46px 0 0;border-radius:15px;padding:16px 18px;font-size:14px;line-height:1.7;box-shadow:0 2px 8px #17203308}.pastanswer b,.directanswer b{font-size:15px;margin-bottom:5px}.turntag{font-size:11px;margin-top:9px}.answerlabel{font-size:10px}.headline{margin:5px 0 15px}.headline h2{font-size:21px;letter-spacing:-.25px}.headline small{font-size:12px}.metrics{gap:12px}.metric{position:relative;min-height:82px;padding:16px 14px 14px 60px;border-radius:15px;box-shadow:0 2px 8px #17203308}.metric:before{position:absolute;left:14px;top:17px;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:#f0edff;color:#6758ef;font-size:15px;font-weight:800}.metric:nth-child(1):before{content:'₹'}.metric:nth-child(2):before{content:'↗';background:#e7f8f4;color:#0b9474}.metric:nth-child(3):before{content:'◷';background:#fff4dd;color:#a96c05}.metric:nth-child(4):before{content:'✓';background:#e9f2ff;color:#3473c7}.metric small{font-size:12px}.metric b{font-size:20px;margin-top:4px}.grid{gap:14px;margin-top:14px}.card{border-radius:15px;box-shadow:0 2px 9px #17203308}.cardhead{padding:15px 17px}.cardhead b{font-size:14px}.cardhead span{font-size:12px}.chart{height:240px;padding:34px 28px 32px}.bar:before,.bar:after{font-size:11px}.bar:before{top:-23px}.bar:after{bottom:-24px}.notice{padding:12px 14px;border-radius:11px;font-size:13px}.tablecard{margin-top:14px}table{font-size:13px}th,td{padding:13px 16px}th{font-size:11px;letter-spacing:.35px}.sql-card{margin-top:14px}.sql-card details summary,.pastsql summary{font-size:12px}.sqlbox{height:150px;padding:15px;font-size:12px;line-height:1.6}.sqlmeta{padding:11px 2px 13px}.sqlstate{font-size:12px}.ghost,.primary{padding:9px 12px;border-radius:9px;font-size:12px}.pastsql,.miniviz,.minitable{margin-right:46px;border-radius:13px}.pastsql{padding:12px 14px}.pastsql pre{padding:12px;font-size:11px}.miniviz{padding:14px}.minibars{height:76px;gap:10px}.minitable table{font-size:12px}.minitable th,.minitable td{padding:11px 13px}
+    .composer{left:382px;right:28px;bottom:20px;max-width:1180px;margin:0 auto;padding:12px 13px 12px 18px;border-radius:19px;box-shadow:0 16px 44px #17203321}.app.collapsed .composer{left:104px}.composer input{font-size:15px}.composer button{padding:11px 17px;border-radius:12px;font-size:13px}.empty{padding:120px 20px}.empty .spark{width:62px;height:62px;font-size:24px}.empty h2{font-size:23px}.empty p{font-size:14px}
+    @media(max-width:1100px){.app{grid-template-columns:68px 244px minmax(0,1fr)}.composer{left:332px}.page{padding-left:22px;padding-right:22px}.recent button{font-size:12px}.metrics{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:720px){.app,.app.collapsed{grid-template-columns:58px minmax(0,1fr)}.composer,.app.collapsed .composer{left:70px;right:12px}.top{height:92px;flex-basis:92px;padding:0 18px}.top h1{font-size:21px}.page{padding:19px 14px 115px}.bubble{font-size:14px}.userq .bubble{max-width:82%}.pastanswer,.directanswer,.pastsql,.miniviz,.minitable{margin-right:0}.chart{height:205px}}
+  </style>
+  <style>
+    /* Final balanced scale */
+    html{zoom:85%;overflow:hidden}body{width:117.648vw;height:117.648vh}.app,.rail,.side,.main{height:117.648vh}
+    .top h1{font-size:25px}.top p{font-size:14px}.status{font-size:11px}
+    .sidehead{font-size:16px}.new,.search input,.nav div{font-size:13px}.recent button{font-size:13px}.db{font-size:11px}
+    .bubble{font-size:16px}.pastanswer,.directanswer{font-size:15px;line-height:1.7}.pastanswer b,.directanswer b{font-size:16px}.turntag{font-size:11px}
+    .headline h2{font-size:22px}.headline small{font-size:12px}.metric small{font-size:12px}.metric b{font-size:21px}
+    .cardhead b{font-size:14px}.cardhead span{font-size:12px}table{font-size:13px}th{font-size:11px}
+    .sql-card details{border-top:1px solid #edf0f5}.sql-card details summary{position:relative;margin:0;padding:14px 54px 14px 17px!important;background:linear-gradient(180deg,#fbfcfe,#f6f8fb);color:#344057;font-size:13px;font-weight:750;letter-spacing:.05px;list-style:none;cursor:pointer;transition:background .18s ease,color .18s ease}.sql-card details summary::-webkit-details-marker{display:none}.sql-card details summary:hover{background:#f1f3f8;color:#252f44}.sql-card details summary:before{display:none}.sql-card details summary:after{content:'⌄';position:absolute;right:17px;top:50%;width:26px;height:26px;display:grid;place-items:center;transform:translateY(-50%);border:1px solid #dce1ea;border-radius:8px;background:#fff;color:#68748a;font-size:14px;transition:transform .2s ease,background .2s ease}.sql-card details[open] summary:after{transform:translateY(-50%) rotate(180deg);background:#ece9ff;color:#5d4fe0;border-color:#d8d2ff}.sql-card details[open] summary{border-bottom:1px solid #e6e9f0}.sqlwrap{padding:15px 16px 2px}.sqlbox{height:180px;padding:17px 18px;font-size:14px;line-height:1.65;border:1px solid #26324a;box-shadow:inset 0 1px 0 #ffffff0a}.sqlstate,.ghost,.primary{font-size:12px}.sqlmeta{padding-top:12px}
+    .pastsql summary{font-size:12px}.pastsql pre{font-size:12px;line-height:1.65}
+    .main{position:relative}.composer,.app.collapsed .composer{position:absolute;left:28px;right:28px;bottom:20px}.composer input{font-size:15px}.composer button{font-size:13px}.empty h2{font-size:24px}.empty p{font-size:14px}
+    .sql-card details summary{display:flex;align-items:center;gap:12px;padding:12px 16px!important}.sql-card details summary:after{display:none}.query-summary-icon{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:10px;background:#182135;color:#dce6f7;font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;box-shadow:inset 0 0 0 1px #ffffff0d}.query-summary-copy{min-width:0;display:grid;gap:2px}.query-summary-copy strong{font-size:13px;line-height:1.25;color:#29354c}.query-summary-copy small{font-size:11px;font-weight:500;color:#7b879b}.query-summary-status{margin-left:auto;padding:5px 8px;border-radius:999px;background:#e7f8f2;color:#08785d;font-size:10px;font-weight:750;white-space:nowrap}.query-chevron{width:30px;height:30px;display:grid;place-items:center;border:1px solid #dce1ea;border-radius:9px;background:#fff;color:#68748a;font-size:15px;transition:transform .2s ease,background .2s ease,color .2s ease}.sql-card details[open] .query-chevron{transform:rotate(180deg);background:#ece9ff;color:#5d4fe0;border-color:#d8d2ff}.sql-card details summary:hover .query-chevron{border-color:#c9cfdb;box-shadow:0 2px 7px #23304a12}
+    .dot.offline{background:#ef6b72;box-shadow:0 0 0 4px #ef6b7218}.api-error{display:none;margin:12px 39px 0 0;padding:11px 13px;border:1px solid #f1c8c8;border-radius:10px;background:#fff4f4;color:#9a3030;font-size:12px}.chart-empty{padding:55px 14px;text-align:center;color:var(--muted);font-size:12px}.chart-kpi{text-align:center;padding:48px 14px 40px;font-size:30px;font-weight:800;color:var(--ink)}.chart-kpi small{display:block;margin-top:6px;color:var(--muted);font-size:12px;font-weight:500}.chart-svg{width:100%;height:190px;overflow:visible}.chart-label{fill:#768197;font-size:10px}
+    html{zoom:1!important}body{width:100vw!important;height:100vh!important}.app,.rail,.side,.main{height:100vh!important}.main{position:relative!important}.composer,.app.collapsed .composer{position:absolute!important;left:28px!important;right:28px!important;bottom:20px!important;z-index:5;max-width:none;margin:0}.composer.locked{opacity:.68}.composer input:disabled{cursor:not-allowed}.composer button:disabled{cursor:not-allowed;filter:grayscale(.35)}
+    .db{width:100%;color:inherit;text-align:left;cursor:pointer}.db:hover,.db:focus-visible{background:#ffffff0b;border-color:#ffffff25;outline:none}.db .dot.offline{background:#ef6b72;box-shadow:0 0 0 4px #ef6b7218}.modal-backdrop{position:fixed;inset:0;z-index:20;display:none;place-items:center;padding:20px;background:#091021b8;backdrop-filter:blur(8px)}.modal-backdrop.open{display:grid}.db-modal{width:min(470px,100%);border:1px solid #e1e5ed;border-radius:20px;background:#fff;padding:24px;box-shadow:0 28px 80px #07102255}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.modal-head h2{margin:0 0 4px;font-size:21px}.modal-head p{margin:0;color:var(--muted);font-size:13px}.modal-close{border:0;background:#f0f2f6;width:34px;height:34px;border-radius:10px;cursor:pointer}.db-form{display:grid;grid-template-columns:1fr 110px;gap:13px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:700;color:#465169}.field input{width:100%;border:1px solid #dbe0e9;border-radius:11px;padding:11px 12px;outline:none;background:#fbfcfe}.field input:focus{border-color:#7163ee;box-shadow:0 0 0 3px #7163ee18}.connect-error{display:none;grid-column:1/-1;padding:10px 12px;border-radius:10px;background:#fff2f2;color:#9b3030;font-size:12px}.connect-action{grid-column:1/-1;border:0;border-radius:11px;padding:12px;color:#fff;font-weight:750;cursor:pointer;background:linear-gradient(135deg,var(--purple),var(--cyan))}.connect-note{grid-column:1/-1;color:#818ca0;font-size:11px;line-height:1.5}.status{cursor:pointer}.empty.connection-required .spark{background:linear-gradient(135deg,#1b2741,#42506b)}
+    .thinking{display:none;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 46px);margin:4px 46px 12px 0;padding:13px 16px;border:1px solid var(--line);border-radius:15px;background:#fff;color:#667187;font-size:13px;box-shadow:0 3px 12px #1720330a}.thinking.visible{display:flex;animation:thinkingIn .28s ease-out both}.thinking-mark{width:29px;height:29px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,#6a5bf2,#29bbb9);color:#fff;font-size:12px;animation:thinkingPulse 1.6s ease-in-out infinite}.thinking-copy{display:grid;gap:2px}.thinking-copy strong{color:#2d3850;font-size:13px}.thinking-copy span{font-size:11px}.thinking-dots{display:inline-flex;gap:3px;margin-left:2px}.thinking-dots i{width:4px;height:4px;border-radius:50%;background:#7b86a0;animation:thinkingDot 1.1s ease-in-out infinite}.thinking-dots i:nth-child(2){animation-delay:.15s}.thinking-dots i:nth-child(3){animation-delay:.3s}.currentturn.revealing .directanswer,.currentturn.revealing .headline,.currentturn.revealing .metrics,.currentturn.revealing .grid,.currentturn.revealing .tablecard,.currentturn.revealing .sql-card,.currentturn.revealing .api-error{animation:answerReveal .42s cubic-bezier(.2,.75,.3,1) both}.currentturn.revealing .tablecard,.currentturn.revealing .sql-card{animation-delay:.08s}@keyframes thinkingIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes thinkingPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 #6657f035}50%{transform:scale(1.05);box-shadow:0 0 0 7px #6657f000}}@keyframes thinkingDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}@keyframes answerReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.thinking.visible,.thinking-mark,.thinking-dots i,.currentturn.revealing>*{animation:none!important}}
+    @media(max-width:720px){.composer,.app.collapsed .composer{left:12px;right:12px;bottom:12px}.bubble{font-size:15px}.pastanswer,.directanswer{font-size:14px}.top h1{font-size:22px}.sqlbox{font-size:13px;height:165px}}
+  </style>
+  <style>
+    :root,[data-theme=light]{color-scheme:light;--bg:#f6f7f9;--surface:#fff;--ink:#101828;--muted:#667085;--line:#e4e7ec;--soft:#f9fafb;--accent:#2457d6;--on-accent:#fff;--ok:#067647;--ok-bg:#ecfdf3;--code-bg:#0f172a;--code-fg:#d6deeb;--side-bg:#fff;--side-fg:#475467;--side-strong:#101828;--side-hover:#f2f4f7;--bubble:#1d2939}
+    [data-theme=dark]{color-scheme:dark;--bg:#0b0f15;--surface:#131923;--ink:#e8ecf2;--muted:#8d99ad;--line:#232c3a;--soft:#0f151e;--accent:#6ea0ff;--on-accent:#07101f;--ok:#3ccf91;--ok-bg:#0f2a21;--code-bg:#090d13;--code-fg:#d6deeb;--side-bg:#0f141c;--side-fg:#99a5b8;--side-strong:#f1f4f9;--side-hover:#18202c;--bubble:#243450}
+    html{zoom:1;overflow:hidden}body{width:100%;height:100vh;overflow:hidden;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,"Helvetica Neue",Helvetica,"Segoe UI",Arial,sans-serif;transition:background .2s,color .2s}
+    button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .app,.app.collapsed{height:100vh;min-height:0;grid-template-columns:260px minmax(0,1fr);overflow:hidden;transition:grid-template-columns .22s}
+    .app.collapsed{grid-template-columns:0 minmax(0,1fr)}.rail{display:none}
+    .side{height:100vh;min-width:0;padding:18px 14px;background:var(--side-bg);color:var(--side-fg);border-right:1px solid var(--line);gap:0}
+    .app.collapsed .side{opacity:0;pointer-events:none;padding:0;border:0}
+    .sidehead{padding:4px 6px 4px 10px;color:var(--side-strong);font-size:16px;font-weight:650}
+    .collapse,.toggle-sidebar,.theme-toggle{border:0;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer}
+    .collapse{width:32px;height:32px;font-size:17px}.collapse:hover,.toggle-sidebar:hover,.theme-toggle:hover{background:var(--side-hover);color:var(--ink)}
+    .new{margin:12px 0 10px;padding:10px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font-size:14px;text-align:left}
+    .new:hover{border-color:var(--accent)}.search{margin-bottom:14px;padding:9px 12px;border:1px solid var(--line);background:var(--surface);border-radius:10px;color:var(--muted)}
+    .search input{font-size:14px;color:var(--ink)}.label{margin:10px 10px 2px;color:var(--muted);font-size:12px;letter-spacing:0;font-weight:600}
+    .recent{flex:1;min-height:0;overflow:auto;align-content:start;gap:2px}.recent button{padding:9px 10px;color:var(--side-fg);font-size:14px;border-radius:8px}
+    .recent button:hover,.recent button.selected,.nav .active{background:var(--side-hover);color:var(--side-strong)}
+    .nav{gap:1px;margin:18px 0 6px}.nav div{padding:8px 10px;color:var(--side-fg);font-size:14px;border-radius:8px}
+    .db{margin-top:12px;padding:12px;border:1px solid var(--line);background:var(--soft);color:var(--muted);font-size:12px;line-height:1.6}
+    .main{position:relative;height:100vh;min-width:0;overflow:hidden;background:var(--bg)}
+    .top{height:54px;flex:0 0 54px;justify-content:flex-start;gap:12px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+    .toggle-sidebar{width:34px;height:34px;font-size:16px}.crumbs{flex:1;color:var(--muted);font-size:14px}.crumbs b{color:var(--ink);font-weight:600}
+    .status{display:flex;align-items:center;gap:8px;height:34px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer}
+    .status .dot{width:8px;height:8px;margin:0;box-shadow:none}.dot{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 20%,transparent)}
+    .dot.offline{background:#98a2b3;box-shadow:none}.theme-toggle{width:34px;height:34px;font-size:17px}.theme-toggle .moon,[data-theme=dark] .theme-toggle .sun{display:none}[data-theme=dark] .theme-toggle .moon{display:inline}
+    .page{flex:1;min-height:0;width:100%;max-width:none;margin:0;overflow:auto;scroll-behavior:smooth;padding:30px 32px 150px;background:var(--bg)}
+    .col{max-width:780px;margin:0 auto}.history{display:grid;gap:22px;margin:0 0 28px}.history:empty{display:none}
+    .pastturn{padding-bottom:24px;border-bottom:1px solid var(--line)}.userq{flex-direction:row-reverse;justify-content:flex-start;gap:12px;margin-bottom:16px}
+    .avatar{width:32px;height:32px;flex:none;border:0;border-radius:50%;background:var(--ink);color:#fff;font-size:10px}
+    .bubble{max-width:min(84%,760px);padding:9px 14px;border:0;border-radius:14px 4px 14px 14px;background:var(--bubble);color:#fff;font-size:15px;line-height:1.5}
+    .thinking{margin:20px 0 20px 0}.reply{padding-top:2px}.ahead{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:14px}.ahead small{margin-left:auto;color:var(--muted);font-size:12px}
+    .mk.sm{width:24px;height:24px;border-radius:7px;background:var(--accent);color:var(--on-accent);font-style:normal;font-size:11px}
+    .directanswer{display:none;margin:0 0 14px;padding:0;background:transparent;border:0;color:var(--ink);font-size:15px;line-height:1.7;box-shadow:none}
+    .directanswer b{display:block;margin-bottom:5px;color:var(--ink);font-size:20px;font-weight:650;letter-spacing:-.2px}
+    .directanswer .turntag{margin-top:8px;color:var(--muted);font-size:12px}
+    .acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.act{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer}
+    .act i{font-style:normal;opacity:.7}.act:hover,.act[aria-pressed=true]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}.act[hidden]{display:none}
+    [data-sec][hidden]{display:none!important}
+    .blk{margin-top:12px;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+    .bh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+    .bh b{font-size:14px;font-weight:650}.bh small{display:block;color:var(--muted);font-size:12px}.bh #chartType{color:var(--muted);font-size:12px}
+    .bb{padding:15px}.sql-card .bb{padding:0}.sql-card details summary{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;list-style:none}
+    .sql-card details summary::-webkit-details-marker{display:none}.sql-card details[open] summary{border-bottom:1px solid var(--line)}
+    .query-summary-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;background:var(--code-bg);color:var(--code-fg);font:700 10px ui-monospace,monospace}
+    .query-summary-copy{display:grid;line-height:1.35}.query-summary-copy strong{font-size:14px}.query-summary-copy small,.query-summary-status{color:var(--muted);font-size:12px}
+    .query-summary-status{margin-left:auto}.query-chevron{color:var(--muted);transition:transform .2s}details[open] .query-chevron{transform:rotate(180deg)}
+    .sqlwrap{padding:14px 16px 2px}.sqlbox{display:block;width:100%;height:185px;resize:vertical;border:0;border-radius:10px;background:var(--code-bg);color:var(--code-fg);padding:15px 16px;font:13px/1.65 ui-monospace,"SF Mono",Menlo,monospace;tab-size:2}
+    .sqlmeta{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 2px 13px}.sqlstate{color:var(--ok);font-size:12px}.changed{color:#b54708!important}
+    .actions{display:flex;gap:8px}.ghost,.primary,.btn{padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:12px;font-weight:650;cursor:pointer}
+    .primary{border-color:var(--accent);background:var(--accent);color:var(--on-accent)}button:disabled{opacity:.7;cursor:progress}
+    .table-scroll{overflow:auto}table{width:100%;border-collapse:collapse;color:var(--ink);font-size:13px}th,td{padding:11px 15px;border-bottom:1px solid var(--line);text-align:left}th{background:var(--soft);color:var(--muted);font-size:12px;font-weight:600}tr:last-child td{border:0}
+    .chart{width:100%;height:220px;display:flex;align-items:flex-end;gap:5%;padding:28px 22px 30px;background:linear-gradient(to bottom,transparent 24%,var(--line) 25%,transparent 25%,transparent 49%,var(--line) 50%,transparent 50%,transparent 74%,var(--line) 75%,transparent 75%)}
+    .chart .bar{position:relative;flex:1;min-width:8px;border-radius:7px 7px 2px 2px;background:var(--accent);transition:height .25s}
+    .chart .bar:before{content:attr(data-v);position:absolute;top:-22px;width:100%;text-align:center;color:var(--muted);font-size:11px}
+    .chart .bar:after{content:attr(data-y);position:absolute;bottom:-23px;width:100%;text-align:center;color:var(--muted);font-size:11px}
+    .chart-svg{width:100%;height:190px;overflow:visible}.chart-label{fill:var(--muted);font-size:11px}.chart-kpi{display:grid;min-height:150px;place-content:center;text-align:center;font-size:30px;font-weight:650}.chart-kpi small{color:var(--muted);font-size:12px}.chart-empty{padding:40px;color:var(--muted);text-align:center}
+    .notice{display:none;margin-top:12px;padding:11px 14px;border-radius:10px;background:var(--ok-bg);color:var(--ok);font-size:13px}.api-error{display:none;margin-top:12px;padding:12px 14px;border:1px solid #fecdca;border-radius:10px;background:#fef3f2;color:#b42318;font-size:13px}
+    .pastanswer{margin:10px 38px 0 0;padding:15px 17px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted);font-size:14px;line-height:1.7}
+    .pastanswer b{display:block;color:var(--ink);font-size:15px}.pastsql{margin:12px 38px 0 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+    .pastsql summary{cursor:pointer;font-size:13px;font-weight:600}.pastsql pre{overflow:auto;padding:12px;border-radius:8px;background:var(--code-bg);color:var(--code-fg);font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap}
+    .empty{padding:145px 20px 30px;text-align:center}.empty .spark{width:48px;height:48px;display:grid;place-items:center;margin:0 auto 16px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-size:20px}
+    .empty h2{margin:0 0 6px;font-size:23px}.empty p{margin:0;color:var(--muted);font-size:14px}
+    .composer{position:fixed;z-index:3;left:292px;right:32px;bottom:20px;width:auto;max-width:780px;margin:0 auto;padding:7px 7px 7px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 4px 16px #1018280f;backdrop-filter:blur(12px);transition:left .22s}
+    .app.collapsed .composer{left:32px}.composer:focus-within{border-color:var(--accent)}.composer input{flex:1;min-width:0;background:none;font-size:15px}
+    .composer button#analyze{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 18px;border:0;border-radius:9px;background:var(--accent);color:var(--on-accent);font-size:14px;font-weight:600;cursor:pointer}
+    .composer button#analyze .spark{font-size:13px}.spinner{display:inline-block;width:11px;height:11px;margin-right:6px;border:2px solid #ffffff80;border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}.thinking{display:none}.thinking.visible{display:flex}
+    .modal-backdrop{z-index:10}
+    .query-summary-copy strong,.thinking-copy strong{color:var(--ink)}.query-summary-copy small,.thinking-copy span{color:var(--muted)}
+    .query-summary-status{background:var(--ok-bg);color:var(--ok)}
+    .query-chevron{border-color:var(--line);background:var(--surface);color:var(--muted)}
+    .sql-card details[open] .query-chevron{border-color:var(--line);background:var(--side-hover);color:var(--accent)}
+    .thinking{background:var(--surface);color:var(--muted)}.thinking-mark{background:var(--accent)}
+    .db-modal{border-color:var(--line);background:var(--surface);color:var(--ink)}
+    .modal-close{background:var(--soft);color:var(--ink)}
+    .field label{color:var(--ink)}.field input{border-color:var(--line);background:var(--soft);color:var(--ink)}
+    .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+    .connect-error{background:#fef3f2;color:#b42318}
+    /* Keep the sidebar treatment consistent with the supplied chat mockup. */
+    .side{--side-bg:#0d1117;--side-fg:#b4bcc9;--side-strong:#f3f5f8;--side-hover:#171d27;--line:#1f2631;--ink:#e8ecf2;--muted:#7d8798;--card:#131923;--ok:#3ccf91;height:100vh;padding:12px 8px 8px;gap:0;background:var(--side-bg);color:var(--side-fg);border-right:1px solid #1a212c}
+    .sidehead{justify-content:space-between;padding:4px 6px 4px 10px;color:var(--side-strong);font-size:15px;font-weight:600}
+    .side .logo{display:flex;align-items:center;gap:10px;min-width:0}.side .logo .tx{white-space:nowrap}
+    .side .mk{display:grid;place-items:center;width:28px;height:28px;flex:none;border-radius:8px;background:linear-gradient(135deg,#4f6df0 0%,#2ba8c9 100%);color:#fff;font-size:14px;line-height:1;font-style:normal}
+    .side .iconbtn{width:28px;height:28px;flex:none;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:14px;cursor:pointer}
+    .side .iconbtn:hover{background:var(--side-hover);color:var(--side-strong)}
+    .menu{display:grid;gap:1px;margin:10px 0 14px}
+    .mi{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--side-fg);font-size:13.5px;text-align:left;cursor:pointer}
+    .mi i{width:16px;flex:none;color:var(--muted);font-size:14px;font-style:normal;text-align:center}
+    .mi:hover{background:var(--side-hover);color:var(--side-strong)}
+    .mi.search{margin:0;cursor:text}.mi.search:hover{background:none}.mi.search input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--ink);font-size:13.5px}
+    .mi.search input::placeholder{color:var(--side-fg)}.mi.search:focus-within{background:var(--side-hover)}
+    .recent{flex:1;min-height:0;overflow:auto;align-content:start;gap:1px;padding:0}
+    .recent .label{margin:8px 10px 4px;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0;opacity:1}
+    .recent button{display:block;width:100%;height:34px;min-height:34px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--side-fg);font-size:13.5px;line-height:34px;text-align:left;cursor:pointer}
+    .recent button:before{display:none!important;content:none!important}
+    .recent button span{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .recent button:hover,.recent button.selected{background:var(--side-hover);color:var(--side-strong)}
+    .recent button.selected{box-shadow:inset 2px 0 0 var(--accent)}
+    .no-chats{padding:5px 10px;color:var(--muted);font-size:12px}
+    .recent::-webkit-scrollbar{width:6px}.recent::-webkit-scrollbar-thumb{border-radius:6px;background:#232b38}
+    .foot{display:grid;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+    .dbline{display:flex;width:100%;min-height:58px;align-items:center;gap:11px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--side-hover);color:var(--side-strong);text-align:left;cursor:pointer;transition:background .16s,border-color .16s,transform .16s}
+    .dbline:hover{border-color:#3a4658;background:#202733;transform:translateY(-1px)}
+    .dbline:active{transform:translateY(0)}
+    .dbline .dot{width:8px;height:8px;flex:none;margin:0;box-shadow:0 0 0 4px #2fd09d18}
+    .dbline .dot.offline{background:#ef6b72;box-shadow:0 0 0 4px #ef6b7218}
+    .dbline .tx{display:grid;min-width:0;flex:1;gap:3px}
+    .dbline .db-title{font-size:12px;font-weight:600;line-height:1.2}
+    .dbline .db-summary{overflow:hidden;color:var(--muted);font-size:11px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+    .dbline .db-chevron{flex:none;color:var(--muted);font-size:18px;line-height:1;transition:color .16s,transform .16s}
+    .dbline:hover .db-chevron{color:var(--side-strong);transform:translateX(2px)}
+    .me{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;color:var(--side-strong);font-size:13.5px;font-weight:500}
+    .me:hover{background:var(--side-hover)}.me small{display:block;color:var(--muted);font-size:12px;font-weight:400;line-height:1.2}
+    .me .av{width:28px;height:28px;flex:none;border:0;border-radius:50%;background:#232b38;color:#e8ecf2;font-size:10.5px}
+    .side :focus-visible{outline-color:#6ea0ff}
+    .app.collapsed{grid-template-columns:60px minmax(0,1fr)}
+    .app.collapsed .side{opacity:1;pointer-events:auto;padding:12px 8px 8px;border-right:1px solid #1a212c}
+    .app.collapsed .side .tx,.app.collapsed .side .recent,.app.collapsed #collapseSidebar,.app.collapsed .mi.search input{display:none}
+    .app.collapsed .sidehead{justify-content:center;padding:4px 0}
+    .app.collapsed .side .logo{cursor:pointer}
+    .app.collapsed .menu{margin:14px 0}
+    .app.collapsed .mi{justify-content:center;width:42px;height:40px;padding:0;margin:0 auto;gap:0}
+    .app.collapsed .mi i{width:auto;font-size:16px}
+    .app.collapsed .dbline{justify-content:center;min-height:38px;padding:6px 0;border-color:transparent;background:transparent}
+    .app.collapsed .dbline .dot{margin:0}
+    .app.collapsed .dbline .db-chevron{display:none}
+    .app.collapsed .me{justify-content:center;padding:6px 0;gap:0}
+    .app.collapsed .mi.search{cursor:pointer}
+    @media(max-width:1000px){.app,.app.collapsed{grid-template-columns:1fr}.side{position:fixed;z-index:5;top:54px;bottom:0;left:0;width:min(260px,85vw);height:calc(100vh - 54px)!important;display:flex;transform:translateX(-105%);box-shadow:0 12px 35px #0002;transition:transform .2s}.app.collapsed .side{opacity:1;pointer-events:auto;padding:18px 14px;border-right:1px solid var(--line);transform:translateX(0)}.app.collapsed .side .tx{display:inline}.app.collapsed .side .recent{display:grid}.app.collapsed #collapseSidebar{display:inline-flex}.app.collapsed .mi.search input{display:block}.app.collapsed .sidehead{justify-content:space-between;padding:4px 6px 4px 10px}.app.collapsed .menu{margin:10px 0 14px}.app.collapsed .mi{justify-content:flex-start;width:auto;height:34px;padding:0 10px;margin:0;gap:10px}.app.collapsed .mi i{width:16px;font-size:14px}.app.collapsed .dbline{justify-content:flex-start;padding:0 10px}.app.collapsed .dbline .dot{margin-right:8px}.app.collapsed .me{justify-content:flex-start;padding:6px 10px;gap:10px}.composer,.app.collapsed .composer{left:16px!important;right:16px!important}.page{padding:22px 16px 145px}}
+    @media(max-width:1000px){.app.collapsed .side .dbline .tx{display:grid}.app.collapsed .side .dbline .dot{margin:0}}
+    @media(max-width:600px){.top{padding:0 12px;gap:8px}.crumbs{font-size:13px}.status{max-width:46vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;padding:0 8px}.composer,.app.collapsed .composer{left:12px!important;right:12px!important}.page{padding:18px 12px 130px}.directanswer b{font-size:18px}.bubble{max-width:82%;font-size:14px}.sqlmeta{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions button{flex:1}.bh{padding:11px 12px}}
+    /* User questions: dark bubble on the right, no avatar. */
+    .avatar{display:none!important}
+    .userq,.userq .bubble{font-weight:500}
+    .userq{flex-direction:row;justify-content:flex-end}
+    .bubble,.userq .bubble{max-width:min(72%,760px);padding:10px 16px;border:0;border-radius:12px;background:var(--bubble)!important;color:#fff!important;box-shadow:none;align-self:flex-end;line-height:1.5}
+    .pastanswer{margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink)}
+    .pastanswer b{display:none}
+    /* Collapsible result blocks and a table that shows 7 rows then scrolls. */
+    .blk>.bh{cursor:pointer;user-select:none}
+    .blk>.bh:after{content:"";flex:none;width:28px;height:28px;margin-left:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23667085' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10l4-4 4 4'/%3E%3C/svg%3E") center/14px no-repeat;transition:transform .2s ease,background-color .15s,border-color .15s}
+    .blk>.bh:hover:after{background-color:var(--soft);border-color:#c9cfdb}
+    .blk.collapsed>.bh{border-bottom:0}.blk.collapsed>.bh:after{transform:rotate(180deg)}.blk.collapsed>:not(.bh){display:none}
+    .blk .bh .btn{margin-left:auto}
+    .table-scroll{max-height:318px;overflow:auto}.table-scroll table{border-collapse:separate;border-spacing:0}
+    .table-scroll th{position:sticky;top:0;z-index:1;height:38px;box-sizing:border-box;padding:0 15px;white-space:nowrap}
+    .table-scroll td{height:40px;box-sizing:border-box;padding:0 15px;white-space:nowrap}
+    .pastturn .blk{margin:12px 0 0}
+    /* Minimal "Thinking..." indicator while waiting for the LLM. */
+    .thinking,.thinking.visible{align-items:baseline;gap:2px;width:auto;margin:14px 0 18px;padding:0;border:0;border-radius:0;background:transparent!important;box-shadow:none;color:var(--muted);font-size:14px;font-style:italic}
+    .thinking-text{background:linear-gradient(90deg,var(--muted) 0%,var(--ink) 50%,var(--muted) 100%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:thinkingShimmer 1.8s linear infinite}
+    .thinking .thinking-dots{gap:3px;margin-left:3px}.thinking .thinking-dots i{width:4px;height:4px;background:var(--muted)}
+    @keyframes thinkingShimmer{to{background-position:-200% 0}}
+    /* Answers start directly with the text: no "Analyst AI" header or "Analysis result" title. */
+    .reply .ahead .mk,.reply .ahead>b,.directanswer>b{display:none!important}
+    .reply .ahead{justify-content:flex-end}
+    /* SQL card: inline title, dark highlighted code block. */
+    .sql-card>.bh{justify-content:flex-start;border-bottom:1px solid var(--line)}
+    .sql-card>.bh>div{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.sql-card>.bh>div small{margin:0}
+    .sql-card>.bh>span{display:none}.sql-card>.bh:after{margin-left:auto}
+    .sql-card .sqlwrap{padding:16px 18px 4px}
+    .sqled{position:relative;border-radius:10px;background:var(--code-bg);overflow:hidden}
+    .sqled .sqlhl,.sqled .sqlbox{margin:0;padding:18px 20px;border:0;font:13px/1.9 ui-monospace,"SF Mono",Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2;letter-spacing:0}
+    .sqled .sqlhl{display:block;min-height:60px;color:#c9d3ee;pointer-events:none}
+    .sqled .sqlbox{position:absolute;inset:0;width:100%;height:100%!important;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:#fff;outline:0;border-radius:0}
+    .sqled .sqlbox::selection{background:#6657f066;color:transparent}
+    .s-kw{color:#7c9cff}.s-fn{color:#4fd1c5}.s-num{color:#b794f6}.s-str{color:#f6ad7b}
+    .pastturn .sql-card .sqlwrap{padding-bottom:16px}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="side" id="chatSidebar">
+      <div class="sidehead"><span class="logo" title="Analyst AI"><i class="mk">✦</i><span class="tx">Analyst AI</span></span><button class="iconbtn" id="collapseSidebar" type="button" title="Close sidebar" aria-label="Close sidebar">‹</button></div>
+      <div class="menu">
+        <button class="mi" id="newChat" type="button" title="New chat"><i>✎</i><span class="tx">New chat</span></button>
+        <label class="mi search" title="Search chats"><i>⌕</i><input id="chatSearch" placeholder="Search chats"></label>
+        <button class="mi" type="button" title="Dashboards"><i>▦</i><span class="tx">Dashboards</span></button>
+        <button class="mi" type="button" title="Data catalog"><i>◎</i><span class="tx">Data catalog</span></button>
+        <button class="mi" type="button" title="Query history"><i>↺</i><span class="tx">Query history</span></button>
+      </div>
+      <div class="recent" id="chatList">
+        <div class="label">Today</div>
+        <button class="selected" type="button"><span>Four-year revenue comparison</span></button>
+        <button type="button"><span>Top products by region</span></button>
+        <div class="label">Previous 7 days</div>
+        <button type="button"><span>Refund trend analysis</span></button>
+        <button type="button"><span>Customer lifetime value</span></button>
+        <button type="button"><span>Sales channel performance</span></button>
+      </div>
+      <div class="foot">
+        <button class="dbline" id="databaseCard" type="button" title="Connect database" aria-label="Connect database">
+          <span class="dot offline" id="sidebarConnectionDot" aria-hidden="true"></span>
+          <span class="tx">
+            <span class="db-title">Database</span>
+            <span class="db-summary" id="sidebarDatabaseSummary">Connect to start analyzing</span>
+          </span>
+          <span class="db-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="me" title="Jassi"><button class="av" type="button" aria-label="Jassi profile">JS</button><div class="tx">Jassi<small>Signed in</small></div></div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="top"><button class="toggle-sidebar" id="toggleSidebar" type="button" title="Toggle chat list" aria-label="Toggle chat list">☰</button><div class="crumbs"><b id="chatTitle">Four-year revenue comparison</b></div><button class="status" id="connectionStatus" type="button"><span class="dot offline" id="connectionDot"></span><span id="connectionLabel">Connect database to begin</span></button><button class="theme-toggle" id="theme" type="button" role="switch" aria-checked="false" aria-label="Toggle dark mode" title="Toggle dark mode"><span class="sun">☀</span><span class="moon">☾</span></button></header>
+      <section class="page" id="page"><div class="col">
+        <div class="history" id="history"></div>
+        <div id="analysis" class="currentturn">
+          <div class="userq"><div class="bubble" id="shownQuestion"></div></div>
+          <div class="thinking" id="thinking" role="status" aria-live="polite"><span class="thinking-text">Thinking</span><span class="thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="reply" id="resultReply">
+            <div class="ahead"><i class="mk sm">✦</i><b>Analyst AI</b><small id="generatedAt"></small></div>
+            <div class="directanswer" id="directAnswer"><b id="reportTitle">Analysis</b><span id="directText">I can answer this without querying the database.</span><div class="turntag" id="reportSubtitle">Direct response · no SQL used</div></div>
+            <div class="acts" role="group" aria-label="Show analysis details">
+              <button class="act" data-show="sql" aria-pressed="true"><i>{ }</i>View SQL</button>
+              <button class="act" data-show="table" aria-pressed="false"><i>▦</i>Table</button>
+              <button class="act" data-show="chart" aria-pressed="false"><i>↗</i>Graph</button>
+            </div>
+            <section class="blk chart-card" id="chartCard" data-sec="chart" hidden><div class="bh"><div><b id="chartTitle">Visualization</b><small id="chartSubtitle"></small></div><span id="chartType"></span></div><div class="bb"><div class="chart" id="chartArea"></div></div></section>
+            <section class="blk sql-card" data-sec="sql"><div class="bh"><div><b>SQL used for this answer</b><small>Read-only and validated</small></div><span id="editBadge">Original</span></div><div class="bb"><div class="sqlwrap"><div class="sqled"><pre class="sqlhl" id="sqlHl" aria-hidden="true"></pre><textarea class="sqlbox" id="sql" spellcheck="false" aria-label="SQL query">SELECT YEAR(o.order_date) AS revenue_year,
+SUM(oi.quantity * oi.unit_price - oi.discount_amount) AS revenue
+FROM orders o
+JOIN order_items oi ON oi.order_id = o.order_id
+WHERE o.order_status IN ('completed', 'delivered')
+GROUP BY YEAR(o.order_date)
+ORDER BY revenue_year
+LIMIT 100;</textarea></div><div class="sqlmeta"><span class="sqlstate" id="sqlState">✓ Read-only query validated</span><div class="actions"><button class="ghost" id="copySql">Copy</button><button class="ghost" id="resetSql">Reset</button><button class="primary" id="runSql">Validate &amp; run</button></div></div></div></div></section>
+            <section class="blk tablecard" data-sec="table" hidden><div class="bh"><div><b>Result preview</b><small id="rowMeta"></small></div><button class="btn" data-export>Download CSV</button></div><div class="table-scroll"><table><thead id="resultHead"></thead><tbody id="resultRows"></tbody></table></div></section>
+          </div>
+          <div class="notice" id="notice">✓ Report regenerated from your edited SQL.</div>
+          <div class="api-error" id="apiError" role="alert"></div>
+        </div>
+        <div class="empty connection-required" id="empty"><div class="spark">◎</div><h2>Connect your database</h2><p>Use the database icon to enter your read-only MySQL credentials and begin.</p></div>
+        </div>
+      </section>
+      <div class="composer locked"><input id="prompt" value="" aria-label="Ask a question" placeholder="Connect a database to start chatting…" disabled><button id="analyze" disabled>Analyze <span class="spark">✦</span></button></div>
+    </main>
+  </div>
+  <div class="modal-backdrop" id="databaseModal" role="dialog" aria-modal="true" aria-labelledby="databaseModalTitle">
+    <form class="db-modal" id="databaseForm">
+      <div class="modal-head"><div><h2 id="databaseModalTitle">Connect MySQL</h2><p>Use a read-only database user for safe analysis.</p></div><button class="modal-close" id="closeDatabaseModal" type="button" aria-label="Close">×</button></div>
+      <div class="db-form">
+        <div class="field"><label for="dbHost">Host</label><input id="dbHost" name="host" value="127.0.0.1" required autocomplete="off"></div>
+        <div class="field"><label for="dbPort">Port</label><input id="dbPort" name="port" type="number" value="3306" min="1" max="65535" required></div>
+        <div class="field full"><label for="dbName">Database name</label><input id="dbName" name="database" placeholder="analyst_ai" required autocomplete="off"></div>
+        <div class="field full"><label for="dbUser">Read-only username</label><input id="dbUser" name="user" required autocomplete="username"></div>
+        <div class="field full"><label for="dbPassword">Password</label><input id="dbPassword" name="password" type="password" autocomplete="current-password"></div>
+        <div class="connect-error" id="connectError" role="alert"></div>
+        <button class="connect-action" id="connectDatabase" type="submit">Connect database</button>
+        <div class="connect-note">Credentials are sent only to this local backend and are kept in memory for the current server session. They are not stored in browser storage.</div>
+      </div>
+    </form>
+  </div>
+  <script>
+    /** Initialize references and transient state used by the interactive analysis workspace. */
+    const tableCard=document.querySelector('.tablecard');
+    const sql=document.querySelector('#sql'), state=document.querySelector('#sqlState'), badge=document.querySelector('#editBadge');
+    const analyzeButton=document.querySelector('#analyze'), sqlButton=document.querySelector('#runSql');
+    let currentQuestion='', currentResponse=null, executedSql='', databaseConnectionId='', thinkingTimer=null;
+    let currentChatButton=document.querySelector('#chatList button.selected');
+    document.querySelector('#analysis').style.display='none';
+    document.querySelector('#empty').style.display='block';
+
+    /** Submit a natural-language question and return the structured API response. */
+    async function analyzeQuestion(question) {
+      const response=await fetch('/api/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Database-Connection':databaseConnectionId},body:JSON.stringify({question})});
+      if(response.status===429)throw new Error('RATE_LIMITED');
+      if(!response.ok)throw new Error('Analysis failed');
+      return response.json();
+    }
+    /** Submit edited SQL for revalidation and return the regenerated analysis response. */
+    async function rerunSql(query) {
+      const response=await fetch('/api/v1/sql/run',{method:'POST',headers:{'Content-Type':'application/json','X-Database-Connection':databaseConnectionId},body:JSON.stringify({question:currentQuestion,sql:query,assumptions:currentResponse?.assumptions||[]})});
+      if(response.status===429)throw new Error('RATE_LIMITED');
+      if(!response.ok)throw new Error('SQL validation or execution failed');
+      return response.json();
+    }
+    /** Display a sanitized API error message in the current chat turn. */
+    function showApiError(message) {
+      const error=document.querySelector('#apiError');
+      error.textContent=message;
+      error.style.display='block';
+    }
+    /** Hide every optional result component before loading or rendering a new response. */
+    function clearCurrentReport() {
+      document.querySelector('#directAnswer').style.display='none';
+      document.querySelector('#generatedAt').textContent='';
+      document.querySelector('#resultReply .acts').style.display='none';
+      document.querySelectorAll('#resultReply [data-sec]').forEach(section=>{section.hidden=true;section.style.display=''});
+      document.querySelectorAll('#resultReply .acts .act').forEach(button=>{button.hidden=true;button.setAttribute('aria-pressed','false')});
+      document.querySelector('#notice').style.display='none';
+      document.querySelector('#apiError').style.display='none';
+    }
+    /** Display one available result view and keep the inline controls in sync. */
+    function pick(reply, view) {
+      reply.querySelectorAll('[data-sec]').forEach(section=>{section.hidden=section.dataset.sec!==view});
+      reply.querySelectorAll('.act').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.show===view)));
+    }
+    /** Show the submitted question and animated analysis progress while the API is working. */
+    function showThinking(question) {
+      clearTimeout(thinkingTimer);
+      clearCurrentReport();
+      document.querySelector('#empty').style.display='none';
+      const analysis=document.querySelector('#analysis'),thinking=document.querySelector('#thinking');
+      analysis.classList.remove('revealing');
+      analysis.style.display='block';
+      document.querySelector('#shownQuestion').textContent=question;
+      thinking.classList.add('visible');
+      analysis.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    /** Stop the progress animation so the final answer or error can be revealed. */
+    function finishThinking() {
+      clearTimeout(thinkingTimer);
+      document.querySelector('#thinking').classList.remove('visible');
+    }
+    /** Append one safely escaped value to a table row and return the created cell implicitly. */
+    function appendCell(row, value, tag='td') {
+      const cell=document.createElement(tag);
+      cell.textContent=value==null?'':String(value);
+      row.appendChild(cell);
+    }
+    /** Render returned rows as a result table and hide the table when no rows exist. */
+    function renderTable(response) {
+      const rows=Array.isArray(response.rows)?response.rows:[];
+      const table=document.querySelector('#resultReply .tablecard'), head=document.querySelector('#resultHead'), body=document.querySelector('#resultRows');
+      const columns=response.columns?.length?response.columns:(rows.length?Object.keys(rows[0]):[]);
+      head.replaceChildren();
+      body.replaceChildren();
+      if(!rows.length||!columns.length){table.hidden=true;return}
+      const headerRow=document.createElement('tr');
+      columns.forEach(column=>appendCell(headerRow,column,'th'));
+      head.appendChild(headerRow);
+      rows.forEach(item=>{
+        const row=document.createElement('tr');
+        columns.forEach(column=>appendCell(row,item[column]));
+        body.appendChild(row);
+      });
+      document.querySelector('#rowMeta').textContent=`${rows.length} row${rows.length===1?'':'s'}${response.execution_metadata?.truncated?' · result truncated':''}`;
+      table.hidden=false;
+    }
+    /** Convert a supported value to a finite number or return null when conversion is unsafe. */
+    function numericValue(value) {
+      if(typeof value==='number'&&Number.isFinite(value))return value;
+      if(typeof value==='string'&&value.trim()!==''){
+        const parsed=Number(value.replace(/,/g,''));
+        if(Number.isFinite(parsed))return parsed;
+      }
+      return null;
+    }
+    /** Render the validated chart specification from returned rows or hide unusable charts. */
+    function renderChart(response) {
+      const chart=response.chart, card=document.querySelector('#chartCard'), area=document.querySelector('#chartArea');
+      const rows=Array.isArray(response.rows)?response.rows:[];
+      area.replaceChildren();
+      area.style.height='';
+      area.style.alignItems='';
+      if(!chart||chart.chart_type==='table'||!rows.length){card.hidden=true;return}
+      card.hidden=false;
+      document.querySelector('#chartTitle').textContent=chart.title||'Result visualization';
+      document.querySelector('#chartSubtitle').textContent=chart.y_field||'Query result';
+      document.querySelector('#chartType').textContent=chart.chart_type;
+      const numericFields=(response.columns||Object.keys(rows[0])).filter(field=>rows.some(row=>numericValue(row[field])!==null));
+      const yField=chart.y_field||numericFields[0];
+      if(chart.chart_type==='kpi'){
+        const value=rows[0]?.[yField];
+        const kpi=document.createElement('div');
+        kpi.className='chart-kpi';
+        kpi.textContent=value==null?'—':String(value);
+        const label=document.createElement('small');
+        label.textContent=yField||'Value';
+        kpi.appendChild(label);
+        area.appendChild(kpi);
+        return;
+      }
+      const points=rows.map(row=>({label:String(row[chart.x_field]??''),value:numericValue(row[yField])})).filter(point=>point.value!==null);
+      if(!points.length){const empty=document.createElement('div');empty.className='chart-empty';empty.textContent='The query did not return numeric values for this chart.';area.appendChild(empty);return}
+      const max=Math.max(...points.map(point=>point.value),0);
+      if(chart.chart_type==='line'){
+        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox','0 0 600 190');
+        svg.setAttribute('class','chart-svg');
+        const left=35,right=575,top=20,bottom=145;
+        const coords=points.map((point,index)=>({x:points.length===1?(left+right)/2:left+index*(right-left)/(points.length-1),y:bottom-(max?point.value/max:0)*(bottom-top),...point}));
+        const line=document.createElementNS(svg.namespaceURI,'polyline');
+        line.setAttribute('points',coords.map(point=>`${point.x},${point.y}`).join(' '));
+        line.setAttribute('fill','none');
+        line.setAttribute('stroke','#6657f0');
+        line.setAttribute('stroke-width','3');
+        svg.appendChild(line);
+        coords.forEach(point=>{
+          const circle=document.createElementNS(svg.namespaceURI,'circle');
+          circle.setAttribute('cx',String(point.x));circle.setAttribute('cy',String(point.y));circle.setAttribute('r','4');circle.setAttribute('fill','#25bdba');svg.appendChild(circle);
+          const label=document.createElementNS(svg.namespaceURI,'text');
+          label.setAttribute('x',String(point.x));label.setAttribute('y','170');label.setAttribute('text-anchor','middle');label.setAttribute('class','chart-label');label.textContent=point.label;svg.appendChild(label);
+        });
+        area.appendChild(svg);
+        return;
+      }
+      area.style.height='190px';
+      area.style.alignItems='flex-end';
+      area.replaceChildren();
+      points.forEach(point=>{
+        const bar=document.createElement('div');
+        bar.className='bar';
+        bar.style.height=`${max?Math.max(4,point.value/max*90):4}%`;
+        bar.dataset.y=point.label;
+        bar.dataset.v=String(point.value);
+        area.appendChild(bar);
+      });
+    }
+    const SQL_KEYWORDS=new Set('SELECT FROM WHERE GROUP BY ORDER HAVING LIMIT OFFSET JOIN LEFT RIGHT INNER OUTER CROSS FULL NATURAL ON AS AND OR NOT IN IS NULL LIKE BETWEEN CASE WHEN THEN ELSE END DISTINCT UNION ALL ASC DESC WITH EXISTS INTERVAL TRUE FALSE OVER PARTITION'.split(' '));
+    const SQL_BREAK_BEFORE=new Set(['FROM','WHERE','GROUP','ORDER','HAVING','LIMIT','UNION']);
+    const SQL_JOIN_MODS=new Set(['LEFT','RIGHT','INNER','OUTER','CROSS','FULL','NATURAL']);
+    /** Lay out SQL one clause per line and hide the backend's row-limit wrapper query. */
+    function formatSql(raw) {
+      let text=(raw||'').trim();
+      const wrapped=text.match(/^SELECT\s+\*\s+FROM\s+\(([\s\S]*)\)\s+AS\s+_bounded_result\s+LIMIT\s+(?:%s|\?|\d+)\s*;?$/i);
+      if(wrapped)text=wrapped[1].trim();
+      text=text.replace(/;\s*$/,'');
+      if(!text)return '';
+      const tokens=text.match(/'(?:[^']|'')*'|`[^`]*`|\(|\)|,|[^\s(),'`]+|\s+/g)||[];
+      const stack=[{depth:0,inSelect:false}];
+      let out='',depth=0,prev='';
+      const indent=()=>'  '.repeat(stack.length-1);
+      const newline=()=>{out=out.trimEnd()+'\n'+indent()};
+      tokens.forEach((token,index)=>{
+        const upper=token.toUpperCase(),context=stack[stack.length-1];
+        if(/^\s+$/.test(token)){if(out&&!/[\n ]$/.test(out))out+=' ';return}
+        if(token==='('){
+          const next=tokens.slice(index+1).find(item=>!/^\s+$/.test(item));
+          depth++;
+          if(next&&next.toUpperCase()==='SELECT'){stack.push({depth,inSelect:false});out+='(';newline();return}
+          out+=token;return;
+        }
+        if(token===')'){
+          if(stack.length>1&&context.depth===depth){stack.pop();newline();out+=')'}else out+=')';
+          depth=Math.max(0,depth-1);return;
+        }
+        if(depth===context.depth&&/^[A-Za-z_]+$/.test(token)){
+          const breakBefore=SQL_BREAK_BEFORE.has(upper)||(upper==='SELECT'&&out)||(SQL_JOIN_MODS.has(upper)&&!SQL_JOIN_MODS.has(prev))||(upper==='JOIN'&&!SQL_JOIN_MODS.has(prev));
+          if(breakBefore&&out&&!/\n\s*$/.test(out))newline();
+          if(upper==='SELECT')context.inSelect=true;else if(upper==='FROM')context.inSelect=false;
+          prev=upper;
+        }
+        out+=token;
+        if(token===','&&depth===context.depth&&context.inSelect){out+='\n'+indent()}
+      });
+      return out.trim()+';';
+    }
+    /** Return escaped HTML with SQL keywords, functions, numbers and strings coloured. */
+    function highlightSql(text) {
+      const esc=value=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return text.replace(/('(?:[^']|'')*')|(`[^`]*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)|([\s\S])/g,(match,str,tick,num,word,other,offset,whole)=>{
+        if(str)return `<span class="s-str">${esc(str)}</span>`;
+        if(num)return `<span class="s-num">${num}</span>`;
+        if(word){
+          if(SQL_KEYWORDS.has(word.toUpperCase()))return `<span class="s-kw">${word}</span>`;
+          return /^\s*\(/.test(whole.slice(offset+match.length))?`<span class="s-fn">${word}</span>`:word;
+        }
+        return esc(match);
+      });
+    }
+    /** Refresh the coloured layer behind the editable SQL textarea. */
+    function syncSql() {document.querySelector('#sqlHl').innerHTML=highlightSql(sql.value)+'\n'}
+    /** Populate the current turn and smoothly reveal the complete analysis response. */
+    function presentResponse(response, question, edited=false) {
+      finishThinking();
+      currentQuestion=question;
+      currentResponse=response;
+      executedSql=formatSql(response.sql);
+      document.querySelector('#empty').style.display='none';
+      document.querySelector('#analysis').style.display='block';
+      const analysis=document.querySelector('#analysis');
+      analysis.classList.remove('revealing');
+      void analysis.offsetWidth;
+      analysis.classList.add('revealing');
+      document.querySelector('#shownQuestion').textContent=question;
+      document.querySelector('#directText').textContent=response.answer||'No answer was returned.';
+      document.querySelector('#directAnswer').style.display='block';
+      document.querySelector('#reportTitle').textContent=response.needs_clarification?'Clarification needed':response.sql?'Analysis result':'Direct answer';
+      document.querySelector('#reportSubtitle').textContent=response.needs_clarification?'Clarification needed · no query executed':response.sql?'Answer generated from validated SQL':'Direct answer · no database query needed';
+      document.querySelector('#generatedAt').textContent=response.sql?'Generated from validated SQL':'';
+      document.querySelectorAll('#resultReply [data-sec]').forEach(section=>{section.hidden=true;section.style.display=''});
+      renderChart(response);
+      renderTable(response);
+      document.querySelector('#resultReply .sql-card').hidden=!response.sql;
+      sql.value=executedSql;
+      syncSql();
+      state.textContent=response.sql?'✓ Read-only query validated':'No SQL was used';
+      state.classList.remove('changed');
+      badge.textContent=edited?'Executed edit':'Validated';
+      badge.classList.toggle('changed',edited);
+      document.querySelector('#notice').style.display=edited?'block':'none';
+      document.querySelector('#apiError').style.display='none';
+      const actions=document.querySelector('#resultReply .acts'), buttons=[...actions.querySelectorAll('.act')];
+      const hasTable=!tableCard.hidden;
+      buttons.find(button=>button.dataset.show==='sql').hidden=!response.sql;
+      buttons.find(button=>button.dataset.show==='table').hidden=!hasTable;
+      buttons.find(button=>button.dataset.show==='chart').hidden=document.querySelector('#chartCard').hidden;
+      const initialView=response.sql?'sql':hasTable?'table':document.querySelector('#chartCard').hidden?null:'chart';
+      actions.style.display=initialView?'flex':'none';
+      if(initialView)pick(document.querySelector('#resultReply'),initialView);
+      document.querySelector('#prompt').value='';
+      document.querySelector('#analysis').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    /** Move the completed current turn into scrollable history before the next question. */
+    function archiveCurrentTurn() {
+      if(!currentResponse||!currentQuestion)return;
+      const article=document.createElement('article');article.className='pastturn';
+      const user=document.createElement('div');user.className='userq';
+      const bubble=document.createElement('div');bubble.className='bubble';bubble.textContent=currentQuestion;
+      user.append(bubble);
+      // Keep the whole reply (answer, View SQL/Table/Graph switcher and blocks) together, exactly as it looked live.
+      const source=document.querySelector('#resultReply'),reply=source.cloneNode(true);
+      reply.removeAttribute('id');
+      reply.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+      const original=source.querySelector('textarea'),cloned=reply.querySelector('textarea');
+      if(original&&cloned){cloned.value=original.value;cloned.readOnly=true}
+      reply.querySelectorAll('.sqlmeta').forEach(meta=>meta.remove());
+      reply.querySelectorAll('details').forEach(details=>details.open=true);
+      article.append(user,reply);
+      document.querySelector('#history').appendChild(article);
+      currentResponse=null;
+    }
+    /** Open the database-credentials dialog and focus its first required project field. */
+    function openDatabaseModal(){document.querySelector('#databaseModal').classList.add('open');setTimeout(()=>document.querySelector('#dbName').focus(),0)}
+    /** Close the database-credentials dialog without storing entered secrets. */
+    function closeDatabaseModal(){document.querySelector('#databaseModal').classList.remove('open')}
+    /** Mark the database as connected, enable chat, and show database metadata. */
+    function setDatabaseConnected(database,tableCount) {
+      document.querySelector('#connectionLabel').textContent=`${database} connected`;
+      const databaseSummary=`${database} · MySQL · ${tableCount} table${tableCount===1?'':'s'}`;
+      document.querySelector('#sidebarDatabaseSummary').textContent=databaseSummary;
+      document.querySelector('#databaseCard').title=databaseSummary;
+      document.querySelector('#databaseCard').setAttribute('aria-label',`Connected to ${database}. ${tableCount} ${tableCount===1?'table':'tables'} available. Click to manage connection.`);
+      document.querySelector('#connectionDot').classList.remove('offline');
+      document.querySelector('#sidebarConnectionDot').classList.remove('offline');
+      document.querySelector('.composer').classList.remove('locked');
+      document.querySelector('#prompt').disabled=false;
+      analyzeButton.disabled=false;
+      document.querySelector('#prompt').placeholder='Ask a question about your data…';
+      const empty=document.querySelector('#empty');
+      empty.classList.remove('connection-required');
+      empty.querySelector('.spark').textContent='✦';
+      empty.querySelector('h2').textContent='Start a new analysis';
+      empty.querySelector('p').textContent='Ask about revenue, customers, products, refunds, or trends.';
+      closeDatabaseModal();
+      document.querySelector('#prompt').focus();
+    }
+    /** Send credentials to the local backend and activate the returned connection session. */
+    async function connectDatabase(event) {
+      event.preventDefault();
+      const button=document.querySelector('#connectDatabase'),error=document.querySelector('#connectError');
+      const body={host:document.querySelector('#dbHost').value.trim(),port:Number(document.querySelector('#dbPort').value),database:document.querySelector('#dbName').value.trim(),user:document.querySelector('#dbUser').value.trim(),password:document.querySelector('#dbPassword').value};
+      button.disabled=true;button.innerHTML='<span class="spinner"></span>Connecting';error.style.display='none';
+      try{
+        const response=await fetch('/api/v1/database/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if(!response.ok)throw new Error('CONNECT_FAILED');
+        const result=await response.json();
+        databaseConnectionId=result.connection_id;
+        document.querySelector('#dbPassword').value='';
+        setDatabaseConnected(result.database,result.table_count);
+      }catch{
+        error.textContent='Connection failed. Check the host, database, read-only user, password, and confirm MySQL is running.';
+        error.style.display='block';
+      }finally{button.disabled=false;button.textContent='Connect database'}
+    }
+    /** Submit the composer question, show progress, and reveal the returned answer or error. */
+    async function submitQuestion() {
+      const question=document.querySelector('#prompt').value.trim();
+      if(!databaseConnectionId){openDatabaseModal();return}
+      if(!question||analyzeButton.disabled)return;
+      archiveCurrentTurn();
+      if(!document.querySelector('#history').children.length&&!currentQuestion){document.querySelector('#chatTitle').textContent=question;if(currentChatButton?.textContent.trim()==='Untitled analysis')currentChatButton.querySelector('span').textContent=question}
+      currentQuestion=question;
+      currentResponse=null;
+      analyzeButton.disabled=true;analyzeButton.innerHTML='<span class="spinner"></span>Analyzing';
+      document.querySelector('#apiError').style.display='none';
+      showThinking(question);
+      try{const [response]=await Promise.all([analyzeQuestion(question),new Promise(resolve=>setTimeout(resolve,550))]);presentResponse(response,question)}
+      catch(error){finishThinking();clearCurrentReport();document.querySelector('#empty').style.display='none';document.querySelector('#analysis').style.display='block';document.querySelector('#shownQuestion').textContent=question;document.querySelector('#analysis').classList.add('revealing');showApiError(error instanceof Error&&error.message==='RATE_LIMITED'?'The analysis provider is temporarily rate limited. Please try again shortly.':'We couldn’t complete that analysis. Check the connection and try again.')}
+      finally{analyzeButton.disabled=false;analyzeButton.textContent='Analyze ✦'}
+    }
+    /** Validate and execute edited SQL, then replace the report with its new result. */
+    async function submitEditedSql() {
+      const query=sql.value.trim();
+      if(!query||sqlButton.disabled)return;
+      sqlButton.disabled=true;sqlButton.innerHTML='<span class="spinner"></span>Running';state.textContent='Validating read-only SQL…';
+      document.querySelector('#apiError').style.display='none';
+      try{presentResponse(await rerunSql(query),currentQuestion,true)}
+      catch(error){state.textContent='Validation or execution failed';state.classList.add('changed');showApiError(error instanceof Error&&error.message==='RATE_LIMITED'?'The analysis provider is temporarily rate limited. Please try again shortly.':'That SQL could not be safely run. Review the query and try again.')}
+      finally{sqlButton.disabled=false;sqlButton.textContent='Validate & run'}
+    }
+    sql.value=formatSql(sql.value);syncSql();
+    sql.addEventListener('input',()=>{syncSql();const changed=sql.value!==executedSql;badge.textContent=changed?'Edited':'Validated';badge.classList.toggle('changed',changed);state.textContent=changed?'● Changes need validation':'✓ Read-only query validated';state.classList.toggle('changed',changed)});
+    document.querySelector('#resetSql').onclick=()=>{sql.value=executedSql;sql.dispatchEvent(new Event('input'));document.querySelector('#notice').style.display='none';document.querySelector('#apiError').style.display='none'};
+    sqlButton.onclick=submitEditedSql;
+    const app=document.querySelector('#app');
+    /** Collapse or expand the saved-chat sidebar and return the updated visual state. */
+    function toggleChats(){app.classList.toggle('collapsed')}
+    document.querySelector('#toggleSidebar').onclick=toggleChats;
+    document.querySelector('#collapseSidebar').onclick=toggleChats;
+    document.querySelector('.side .logo').onclick=()=>{if(app.classList.contains('collapsed')&&innerWidth>1000)app.classList.remove('collapsed')};
+    document.querySelector('.mi.search').onclick=()=>{if(app.classList.contains('collapsed')&&innerWidth>1000){app.classList.remove('collapsed');setTimeout(()=>document.querySelector('#chatSearch').focus(),230)}};
+    const chatHistory=new Map();
+    /** Save the visible conversation under the active chat, then clear the workspace. */
+    function stashCurrentChat() {
+      archiveCurrentTurn();
+      const history=document.querySelector('#history');
+      if(currentChatButton)chatHistory.set(currentChatButton,[...history.children]);
+      history.replaceChildren();
+      currentQuestion='';currentResponse=null;executedSql='';clearCurrentReport();
+      document.querySelector('#analysis').style.display='none';
+    }
+    /** Show a chat's saved conversation, or the empty state when it has none. */
+    function restoreChat(button) {
+      const saved=chatHistory.get(button)||[];
+      document.querySelector('#history').replaceChildren(...saved);
+      document.querySelector('#empty').style.display=saved.length?'none':'block';
+    }
+    document.querySelector('#chatList').addEventListener('click',event=>{const button=event.target.closest('button');if(!button||button===currentChatButton)return;stashCurrentChat();document.querySelectorAll('#chatList button').forEach(item=>item.classList.remove('selected'));button.classList.add('selected');currentChatButton=button;document.querySelector('#chatTitle').textContent=button.textContent.trim();restoreChat(button);document.querySelector('.page').scrollTo({top:0})});
+    document.querySelector('#chatSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#chatList button').forEach(b=>b.style.display=b.textContent.toLowerCase().includes(q)?'block':'none')});
+    document.querySelector('#newChat').onclick=()=>{stashCurrentChat();document.querySelector('#empty').style.display='block';document.querySelectorAll('#chatList button').forEach(button=>button.classList.remove('selected'));const button=document.createElement('button'),label=document.createElement('span');label.textContent='Untitled analysis';button.appendChild(label);button.classList.add('selected');document.querySelector('#chatList').insertBefore(button,document.querySelectorAll('#chatList .label')[1]||null);currentChatButton=button;document.querySelector('#chatTitle').textContent='Untitled analysis';document.querySelector('#prompt').value='';if(databaseConnectionId)document.querySelector('#prompt').focus();else openDatabaseModal();document.querySelector('.page').scrollTo({top:0,behavior:'smooth'})};
+    const themeButton=document.querySelector('#theme'),themeRoot=document.documentElement;
+    themeRoot.dataset.theme='light';
+    themeButton.setAttribute('aria-checked','false');
+    themeButton.onclick=()=>{const enabled=themeRoot.dataset.theme!=='dark';themeRoot.dataset.theme=enabled?'dark':'light';themeButton.setAttribute('aria-checked',String(enabled))};
+    document.addEventListener('click',event=>{const button=event.target.closest('.reply .acts .act');if(button&&!button.hidden)pick(button.closest('.reply'),button.dataset.show)});
+    document.querySelector('#copySql').onclick=async event=>{const button=event.currentTarget;try{await navigator.clipboard.writeText(sql.value);button.textContent='Copied'}catch{button.textContent='Copy unavailable'}setTimeout(()=>button.textContent='Copy',1400)};
+    document.addEventListener('click',event=>{const button=event.target.closest('[data-export]');if(!button)return;const table=button.closest('.tablecard').querySelector('table');const rows=[...table.rows].map(row=>[...row.cells].map(cell=>`"${cell.textContent.trim().replace(/"/g,'""')}"`).join(','));const link=document.createElement('a');link.href=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\n')],{type:'text/csv'}));link.download='analysis-results.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)});
+    document.addEventListener('click',event=>{const header=event.target.closest('.blk>.bh');if(!header||event.target.closest('button'))return;header.parentElement.classList.toggle('collapsed')});
+    analyzeButton.onclick=submitQuestion;
+    document.querySelector('#prompt').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();submitQuestion()}});
+    document.querySelector('#databaseForm').addEventListener('submit',connectDatabase);
+    document.querySelector('#databaseCard').onclick=openDatabaseModal;
+    document.querySelector('#connectionStatus').onclick=openDatabaseModal;
+    document.querySelector('#closeDatabaseModal').onclick=closeDatabaseModal;
+    document.querySelector('#databaseModal').addEventListener('click',event=>{if(event.target===event.currentTarget)closeDatabaseModal()});
+    openDatabaseModal();
+  </script>
+</body>
+</html>
