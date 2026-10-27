@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analyst AI: Inline Chat</title>
+<script>try{var t=localStorage.getItem('aai-theme');document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){}</script>
+<style>
+
+:root,[data-theme=light]{color-scheme:light;--font:"Inter","Helvetica Neue",Helvetica,"Segoe UI",Arial,sans-serif;--mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+--bg:#f6f7f9;--card:#fff;--ink:#101828;--muted:#667085;--line:#e4e7ec;--soft:#f9fafb;
+--accent:#2457d6;--on-accent:#fff;--ok:#067647;--ok-bg:#ecfdf3;--warn:#b54708;
+--code-bg:#0f172a;--code-fg:#d6deeb;--side-bg:#fff;--side-fg:#475467;--side-strong:#101828;--side-hover:#f2f4f7;
+--bubble:#1d2939;--shadow:none;--lift:0 4px 16px #1018280f}
+[data-theme=dark]{color-scheme:dark;
+--bg:#0b0f15;--card:#131923;--ink:#e8ecf2;--muted:#8d99ad;--line:#232c3a;--soft:#0f151e;
+--accent:#6ea0ff;--on-accent:#07101f;--ok:#3ccf91;--ok-bg:#0f2a21;--warn:#f0b35a;
+--code-bg:#090d13;--code-fg:#d6deeb;--side-bg:#0f141c;--side-fg:#99a5b8;--side-strong:#f1f4f9;--side-hover:#18202c;
+--bubble:#243450;--shadow:none;--lift:0 8px 28px #00000066}
+
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:15px/1.55 var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:8px}
+.av{width:32px;height:32px;flex:none;border:0;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--ink);color:#fff}
+.side{background:var(--side-bg);color:var(--side-fg);display:flex;flex-direction:column;min-width:0;overflow:hidden;padding:20px 16px;transition:opacity .16s}
+.head{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;color:var(--side-strong)}
+.iconbtn{width:34px;height:34px;border:0;border-radius:9px;background:none;color:inherit;cursor:pointer;font-size:16px}.iconbtn:hover{background:var(--side-hover)}
+.new{margin:16px 0 10px;padding:10px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font-weight:600;font-size:14px;text-align:left;cursor:pointer}
+.search{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--muted)}
+.search input{width:100%;min-width:0;border:0;outline:0;background:none;font-size:14px;color:var(--ink)}
+.recent{display:grid;gap:2px;flex:1;min-height:0;overflow:auto;align-content:start}
+.label{font-size:12px;font-weight:600;opacity:.6;margin:10px 10px 2px}
+.recent button{border:0;background:none;color:var(--side-fg);text-align:left;padding:9px 10px;border-radius:8px;font-size:14px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent button:hover,.recent button.selected{background:var(--side-hover);color:var(--side-strong)}
+.db{padding:12px;border:1px solid var(--line);border-radius:10px;font-size:13px;line-height:1.6;background:var(--card);color:var(--muted)}
+.userq{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.bubble{padding:9px 14px;border-radius:14px;background:var(--bubble);line-height:1.5}
+.history{display:grid;gap:22px}.pastturn>*+*{margin-top:10px}
+.pastanswer,.directanswer{color:var(--muted);font-size:14.5px;line-height:1.7}
+.pastanswer b,.directanswer b{display:block;color:var(--ink);font-size:16px}
+.directanswer{display:none}.tag{font-size:12px;margin-top:6px;opacity:.8}
+.minitable{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.pastsql summary{cursor:pointer;font-size:13px;font-weight:600}
+.pastsql pre{margin:8px 0 0;padding:12px;white-space:pre-wrap;overflow:auto;background:var(--code-bg);color:var(--code-fg);border-radius:9px;font:12.5px/1.65 var(--mono)}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--line)}
+th{font-size:12px;font-weight:600;color:var(--muted)}tr:last-child td{border:0}
+.sqlbox{display:block;width:100%;height:170px;resize:vertical;border:0;outline:0;border-radius:10px;background:var(--code-bg);color:var(--code-fg);padding:14px 16px;font:13.5px/1.65 var(--mono)}
+.sqlmeta{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:12px}
+.sqlstate{font-size:13px;color:var(--ok)}.changed{color:var(--warn)!important}
+.actions{display:flex;gap:8px}
+.ghost,.primary{border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;background:var(--card)}
+.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button:disabled{opacity:.7;cursor:progress}
+.notice{display:none;margin-top:12px;padding:11px 14px;border-radius:10px;background:var(--ok-bg);color:var(--ok);font-size:14px}
+.spinner{display:inline-block;width:11px;height:11px;margin-right:6px;border:2px solid #ffffff80;border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.empty{display:none;text-align:center;padding:110px 20px}.empty h2{font-size:24px;margin:0 0 6px}.empty p{color:var(--muted);margin:0}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+body{font-size:14.5px;transition:background .2s,color .2s}
+.app{display:grid;grid-template-columns:256px 1fr;height:100vh;transition:grid-template-columns .22s}.app.collapsed{grid-template-columns:0 1fr}
+.side{border-right:1px solid var(--line);padding:18px 14px}.collapsed .side{opacity:0;pointer-events:none;padding:0;border:0}
+.head{font-size:16px;font-weight:650}.logo{display:flex;align-items:center;gap:10px}
+.mk{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-style:normal;font-size:13px;background:var(--accent);color:var(--on-accent)}.mk.sm{width:24px;height:24px;border-radius:7px;font-size:11px}
+.nav{display:grid;gap:1px;margin:18px 0 6px}
+.nv{display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--side-fg);padding:8px 10px;border-radius:8px;font-size:14px;text-align:left;cursor:pointer}
+.nv i{width:18px;text-align:center;font-style:normal;opacity:.75}.nv em{margin-left:auto;font-style:normal;font-size:12px;color:var(--muted)}
+.nv:hover,.nv.on{background:var(--side-hover);color:var(--side-strong)}.nv.on{font-weight:600}
+.new{margin:12px 0 10px;text-align:center}.new:hover{border-color:var(--accent)}.label{font-weight:500;opacity:.7}
+.recent button.selected{background:var(--side-hover);color:var(--side-strong);font-weight:600}
+.foot{display:grid;gap:12px;margin-top:12px}.db{background:var(--soft)}.db b{color:var(--ink);font-weight:600}
+.me{display:flex;align-items:center;gap:10px;color:var(--side-strong);font-size:14px;font-weight:600}.me small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.av{background:var(--bubble);color:#fff;font-weight:600}
+.main{display:flex;flex-direction:column;height:100vh;min-width:0;overflow:hidden}
+.top{display:flex;align-items:center;gap:10px;height:54px;padding:0 20px;background:var(--card);border-bottom:1px solid var(--line)}
+.crumbs{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crumbs i{font-style:normal;margin:0 8px;opacity:.5}.crumbs b{color:var(--ink);font-weight:600}
+.tools{margin-left:auto;display:flex;align-items:center;gap:12px}.status{font-size:13px;color:var(--muted)}.status .dot{margin-right:6px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}.btn:hover{border-color:var(--accent);color:var(--accent)}
+#theme .moon,[data-theme=dark] #theme .sun{display:none}[data-theme=dark] #theme .moon{display:inline}
+.body{position:relative;flex:1;min-height:0}
+.body:after{content:'';position:absolute;left:0;right:14px;bottom:0;height:120px;background:linear-gradient(#0000,var(--bg) 65%);pointer-events:none}
+.page{height:100%;overflow:auto;padding:30px 32px 170px;scroll-behavior:smooth}.col{max-width:780px;margin:0 auto}
+.userq{flex-direction:row-reverse;margin-bottom:16px}.bubble{color:#fff;border-radius:14px 4px 14px 14px;max-width:84%}
+.history{margin-bottom:28px}.history:empty{display:none}
+.pastturn{padding-bottom:28px;border-bottom:1px solid var(--line)}
+.pastanswer,.directanswer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.reply{padding-top:2px}
+.ahead{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:14px}.ahead small{margin-left:auto;color:var(--muted);font-size:12.5px}
+.reply h3{margin:0 0 6px;font-size:21px;font-weight:650;letter-spacing:-.3px}
+.reply>p{margin:0;color:var(--muted);font-size:15px;line-height:1.65}
+.ins{margin:14px 0 20px;padding-left:18px;display:grid;gap:6px}.ins li::marker{color:var(--accent)}.ins b{font-weight:650}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:12px;background:var(--card);margin:0}
+.stat{padding:14px 16px;border-right:1px solid var(--line)}.stat:last-child{border:0}
+.stat small{display:block;color:var(--muted);font-size:12px}.stat b{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+.blk{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.bh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.bh b{font-size:14px;font-weight:650}.bh small{color:var(--muted);font-size:13px;margin-left:8px}
+.bb{padding:16px}
+.chart{width:100%;height:auto;max-height:330px;display:block}.chart .g{stroke:var(--line)}.chart .ax{font-size:11px;fill:var(--muted);text-anchor:middle}
+.chart .y{font-size:13px;fill:var(--muted)}.chart .v{font-size:13px;font-weight:650;fill:var(--ink)}
+.chart .bar{fill:var(--accent);opacity:.3}.chart .bar.cur{opacity:1}.chart .yoy{font-size:12px;font-weight:600;fill:var(--ok);text-anchor:end}
+.blk th{background:var(--soft)}.up{color:var(--ok);font-weight:600}
+details.blk summary{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;list-style:none}details.blk summary::-webkit-details-marker{display:none}
+details[open].blk summary{border-bottom:1px solid var(--line)}
+.sicon{width:32px;height:32px;flex:none;border-radius:8px;display:grid;place-items:center;background:var(--code-bg);color:var(--code-fg);font:700 10px var(--mono)}
+.scopy{display:grid;line-height:1.35}.scopy b{font-size:14px;font-weight:650}.scopy small{color:var(--muted);font-size:12.5px}
+#editBadge{margin-left:auto;font-size:12.5px;color:var(--muted)}
+.chev{color:var(--muted);transition:transform .2s}details[open] .chev{transform:rotate(180deg)}
+.editor{position:relative;height:210px;border-radius:10px;background:var(--code-bg);overflow:hidden}
+.hl,.ta{position:absolute;inset:0;margin:0;padding:16px 18px;font:13.5px/1.7 var(--mono);white-space:pre;tab-size:2}
+.hl{overflow:hidden;color:var(--code-fg);pointer-events:none}
+.ta{width:100%;height:100%;resize:none;border:0;outline:0;background:transparent;color:transparent;caret-color:#fff;overflow:auto}.ta::selection{background:#6ea0ff55;color:transparent}
+.staticsql{margin:0;padding:16px 18px;border-radius:10px;background:var(--code-bg);color:var(--code-fg);font:13px/1.65 var(--mono);white-space:pre-wrap;overflow:auto}
+.hl .k,.staticsql .k{color:#82aaff}.hl .f,.staticsql .f{color:#7fdbca}.hl .s,.staticsql .s{color:#ecc48d}.hl .n,.staticsql .n{color:#c792ea}
+.sqlstate{color:var(--ok)}
+.dock{position:absolute;z-index:2;left:32px;right:46px;bottom:20px;max-width:780px;margin:0 auto}
+.composer{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px 7px 7px 16px;box-shadow:var(--lift)}.composer:focus-within{border-color:var(--accent)}
+.composer input{flex:1;min-width:0;border:0;outline:0;background:none;font-size:15px}
+.composer button{border:0;border-radius:8px;background:var(--accent);color:var(--on-accent);padding:9px 18px;font-weight:600;cursor:pointer}
+.empty{padding-top:150px}.empty .mk{width:48px;height:48px;border-radius:14px;font-size:20px;margin:0 auto 16px}
+@media(max-width:1000px){.app,.app.collapsed{grid-template-columns:1fr}.side{display:none}.crumbs{display:none}.page{padding:22px 16px 170px}.dock{left:16px;right:16px}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.act{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:8px 15px;font-size:13.5px;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.act i{font-style:normal;font-size:13px;opacity:.65}
+.act:hover{border-color:var(--accent);color:var(--accent)}
+.act[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card));color:var(--accent)}.act[aria-pressed=true] i{opacity:1}
+.blk[hidden]{display:none}.blk:not([hidden]){animation:rise .22s ease}@keyframes rise{from{opacity:0;transform:translateY(-4px)}}
+
+/* ===== Sidebar: compact, neutral, ChatGPT-style ===== */
+.app{grid-template-columns:260px 1fr}.app.collapsed{grid-template-columns:0 1fr}
+.side{padding:12px 8px 8px;gap:0;border-right:1px solid var(--line);background:var(--side-bg);color:var(--side-fg);flex-direction:column}
+.collapsed .side{opacity:0;pointer-events:none;padding:0;border:0}
+.side .head{padding:4px 6px 4px 10px;font-size:15px;font-weight:600;color:var(--side-strong)}
+.side .iconbtn{width:28px;height:28px;border-radius:7px;font-size:14px;color:var(--muted)}
+.menu{display:grid;gap:1px;margin:10px 0 14px}
+.mi{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--side-fg);font-size:13.5px;text-align:left;cursor:pointer}
+.mi i{width:16px;text-align:center;font-style:normal;font-size:14px;color:var(--muted)}
+.mi:hover{background:var(--side-hover);color:var(--side-strong)}
+.mi.search{cursor:text;margin:0}.mi.search:hover{background:none}.mi.search input{flex:1;min-width:0;border:0;outline:0;background:none;font-size:13.5px;color:var(--ink)}
+.mi.search input::placeholder{color:var(--side-fg)}.mi.search:focus-within{background:var(--side-hover)}
+.recent{gap:1px;padding:0}
+.recent .label{margin:8px 10px 4px;font-size:12px;font-weight:500;opacity:1;color:var(--muted)}
+.recent button{display:block;height:34px;padding:0 10px;border-radius:8px;font-size:13.5px;line-height:34px;color:var(--side-fg)}
+.recent button span{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.recent button:hover{background:var(--side-hover);color:var(--side-strong)}
+.recent button.selected{background:var(--side-hover);color:var(--side-strong);font-weight:500}
+.foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);display:grid;gap:6px}
+.dbline{display:flex;align-items:center;padding:0 10px;font-size:12px;color:var(--muted)}.dbline .dot{width:6px;height:6px;margin-right:8px}
+.me{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;font-size:13.5px;font-weight:500;color:var(--side-strong)}
+.me:hover{background:var(--side-hover)}.me small{display:block;font-size:12px;font-weight:400;color:var(--muted);line-height:1.2}
+.me .av{width:28px;height:28px;font-size:10.5px}
+@media(max-width:1000px){.app,.app.collapsed{grid-template-columns:1fr}.side{display:none}}
+
+/* ===== Sidebar: dark theme (both modes) ===== */
+.side{--side-bg:#0d1117;--side-fg:#b4bcc9;--side-strong:#f3f5f8;--side-hover:#171d27;--line:#1f2631;--ink:#e8ecf2;--muted:#7d8798;--card:#131923;--ok:#3ccf91;background:var(--side-bg);border-right:1px solid #1a212c}
+.side .iconbtn:hover{background:var(--side-hover);color:var(--side-strong)}
+.recent button.selected,.mi.search:focus-within{background:#1b2230}
+.recent button.selected{box-shadow:inset 2px 0 0 var(--accent)}
+.recent::-webkit-scrollbar{width:6px}.recent::-webkit-scrollbar-thumb{background:#232b38;border-radius:6px}
+.me .av{background:#232b38;color:#e8ecf2}
+.side :focus-visible{outline-color:#6ea0ff}
+
+.crumbs{display:block!important;font-size:14.5px}.crumbs b{font-weight:600}
+.status{display:flex;align-items:center;gap:0}.status b{color:var(--ink);font-weight:600;margin-right:4px}
+
+/* connection chip */
+.status{gap:8px;padding:5px 12px 5px 10px;border:1px solid color-mix(in srgb,var(--ok) 28%,var(--line));border-radius:999px;background:var(--ok-bg);color:var(--ok);font-size:13px;font-weight:500;line-height:1}
+.status .dot{width:7px;height:7px;margin:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 20%,transparent)}
+.status b{color:var(--ink);font-weight:600;margin:0 -3px 0 0}
+
+.status{background:var(--card);border-color:var(--line);color:var(--muted)}
+
+.status{height:36px;gap:10px;padding:0 14px;border-radius:9px;font-size:13.5px;box-shadow:0 1px 2px #1018280a}
+.status .dot{width:8px;height:8px}
+.status b{margin:0;font-size:13.5px}
+.status .sep{width:1px;height:16px;background:var(--line)}
+.status .st{color:var(--ok);font-weight:500}
+
+/* brand gradient: logo + Analyze button */
+:root{--grad:linear-gradient(135deg,#4f6df0 0%,#2ba8c9 100%)}
+.side .logo{gap:10px}
+.side .mk{width:28px;height:28px;border-radius:8px;font-size:14px;color:#fff;background:var(--grad);box-shadow:0 1px 2px #0000004d,inset 0 0 0 1px #ffffff26}
+.composer button#analyze{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 18px;border-radius:9px;background:var(--grad);color:#fff;font-size:14px;font-weight:600;letter-spacing:.1px;box-shadow:0 1px 2px #1018282e,inset 0 0 0 1px #ffffff1f;transition:filter .15s,box-shadow .15s}
+.composer button#analyze .spark{font-size:13px;opacity:.95}
+.composer button#analyze:hover{filter:brightness(1.07);box-shadow:0 3px 10px #2b7fd740,inset 0 0 0 1px #ffffff26}
+.composer button#analyze:active{filter:brightness(.96)}
+.composer button#analyze:disabled{filter:none;opacity:.75}
+
+/* calmer Analyze button */
+.composer button#analyze{background:linear-gradient(135deg,#3f5fd8 0%,#2f8fb5 100%);box-shadow:none;font-weight:600}
+.composer button#analyze .spark{opacity:.85}
+.composer button#analyze:hover{filter:brightness(1.05);box-shadow:none}
+.composer button#analyze:active{filter:brightness(.95)}
+
+/* ===== Collapsed sidebar = icon-only rail ===== */
+.foot{margin-top:auto}
+.app.collapsed{grid-template-columns:60px 1fr}
+.collapsed .side{opacity:1;pointer-events:auto;padding:12px 8px 8px;border-right:1px solid #1a212c}
+.collapsed .side .tx,.collapsed .side .recent,.collapsed #collapseSidebar,.collapsed .mi.search input{display:none}
+.collapsed .side .head{justify-content:center;padding:4px 0}
+.collapsed .side .logo{cursor:pointer}
+.collapsed .menu{margin:14px 0}
+.collapsed .mi{justify-content:center;width:42px;height:40px;padding:0;margin:0 auto;gap:0}
+.collapsed .mi i{width:auto;font-size:16px}
+.collapsed .dbline{justify-content:center;padding:6px 0}.collapsed .dbline .dot{margin:0}
+.collapsed .me{justify-content:center;padding:6px 0;gap:0}
+.collapsed .mi.search{cursor:pointer}
+
+.act i{display:inline-flex;align-items:center}
+.pastturn .reply{padding-top:0}.pastturn .reply .acts{margin:0}
+</style>
+</head>
+<body>
+<div class="app" id="app"><aside class="side">
+<div class="head"><span class="logo" title="Analyst AI"><i class="mk">✦</i><span class="tx">Analyst AI</span></span><button class="iconbtn" id="collapseSidebar" title="Close sidebar">‹</button></div>
+<div class="menu">
+<button class="mi" id="newChat" title="New chat"><i>✎</i><span class="tx">New chat</span></button>
+<label class="mi search" title="Search chats"><i>⌕</i><input id="chatSearch" placeholder="Search chats"></label>
+<button class="mi" title="Dashboards"><i>▦</i><span class="tx">Dashboards</span></button>
+<button class="mi" title="Data catalog"><i>◎</i><span class="tx">Data catalog</span></button>
+<button class="mi" title="Query history"><i>↺</i><span class="tx">Query history</span></button>
+</div>
+<div class="recent" id="chatList"><div class="label">Today</div><button class="selected"><span>Four-year revenue comparison</span></button><button><span>Top products by region</span></button><div class="label">Previous 7 days</div><button><span>Refund trend analysis</span></button><button><span>Customer lifetime value</span></button><button><span>Sales channel performance</span></button></div>
+<div class="foot"><div class="dbline" title="Retail Warehouse · MySQL · 7 tables"><span class="dot"></span><span class="tx">Retail Warehouse · MySQL · 7 tables</span></div><div class="me" title="Jassi"><button class="av" aria-label="Profile">JS</button><div class="tx">Jassi<small>Signed in</small></div></div></div>
+</aside>
+<main class="main">
+<header class="top"><button class="iconbtn" id="toggleSidebar" title="Toggle chat list">☰</button><div class="crumbs"><b id="chatTitle">Four-year revenue comparison</b></div>
+<div class="tools"><span class="status" title="Database connection"><span class="dot"></span><b>Retail Warehouse</b><span class="sep"></span><span class="st">Connected</span></span><button class="iconbtn" id="theme" role="switch" aria-checked="false" aria-label="Dark mode" title="Toggle dark mode"><span class="sun">☀</span><span class="moon">☾</span></button></div></header>
+<div class="body"><section class="page" id="page"><div class="col">
+<div class="history" id="history"><article class="pastturn"><div class="userq"><div class="av">JS</div><div class="bubble">What can you help me analyze?</div></div><div class="pastanswer"><b>I can explore your connected business data</b>I can answer direct questions, explain metrics, compare periods and spot trends, and I add a chart only when it helps.<div class="tag">Direct answer, no database query needed</div></div></article><article class="pastturn"><div class="userq"><div class="av">JS</div><div class="bubble">Show refund rate by sales channel.</div></div><div class="pastanswer"><b>Online has the highest refund rate</b>Online refunds are 4.8%, compared with 3.1% for retail and 2.6% for partner sales.</div>
+<div class="reply">
+<div class="acts" role="group" aria-label="Show details"><button class="act" data-show="sql" aria-pressed="true"><i>{ }</i>View SQL</button><button class="act" data-show="table" aria-pressed="false"><i>▦</i>Table</button><button class="act" data-show="chart" aria-pressed="false"><i><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2v12h12"/><path d="M4.5 10.5 7.5 7l2.5 2.5L13.5 4.5"/></svg></i>Graph</button></div>
+<section class="blk" data-sec="sql"><div class="bh"><div><b>SQL used for this answer</b><small>Read-only and validated</small></div></div><div class="bb"><pre class="staticsql">SELECT sales_channel, COUNT(*) AS orders,
+ROUND(100 * SUM(refunded) / COUNT(*), 1) AS refund_rate
+FROM order_refund_summary
+GROUP BY sales_channel;</pre></div></section>
+<section class="blk" data-sec="table" hidden><div class="bh"><div><b>Result preview</b><small>3 rows</small></div><button class="btn" data-export data-file="refund-rate-by-channel.csv">Download CSV</button></div><table><thead><tr><th>Channel</th><th>Orders</th><th>Refund rate</th></tr></thead><tbody><tr><td>Online</td><td>2,184</td><td>4.8%</td></tr><tr><td>Retail</td><td>1,706</td><td>3.1%</td></tr><tr><td>Partner</td><td>1,110</td><td>2.6%</td></tr></tbody></table></section>
+<section class="blk" data-sec="chart" hidden><div class="bh"><div><b>Refund rate by sales channel</b><small>% of orders refunded</small></div></div><div class="bb"><svg class="chart" viewBox="0 0 560 230" role="img" aria-label="Refund rate by sales channel: online 4.8%, retail 3.1%, partner 2.6%"><line class="g" x1="70" x2="70" y1="10" y2="190"/><line class="g" x1="138" x2="138" y1="10" y2="190"/><line class="g" x1="206" x2="206" y1="10" y2="190"/><line class="g" x1="274" x2="274" y1="10" y2="190"/><line class="g" x1="342" x2="342" y1="10" y2="190"/><line class="g" x1="410" x2="410" y1="10" y2="190"/><line class="g" x1="478" x2="478" y1="10" y2="190"/><text class="ax" x="70" y="212">0%</text><text class="ax" x="138" y="212">1%</text><text class="ax" x="206" y="212">2%</text><text class="ax" x="274" y="212">3%</text><text class="ax" x="342" y="212">4%</text><text class="ax" x="410" y="212">5%</text><text class="ax" x="478" y="212">6%</text><text class="y" x="0" y="47">Online</text><rect class="bar cur" x="70" y="24" width="326" height="36" rx="6"/><text class="v" x="406" y="47">4.8%</text><text class="y" x="0" y="105">Retail</text><rect class="bar" x="70" y="82" width="211" height="36" rx="6"/><text class="v" x="291" y="105">3.1%</text><text class="y" x="0" y="163">Partner</text><rect class="bar" x="70" y="140" width="177" height="36" rx="6"/><text class="v" x="257" y="163">2.6%</text></svg></div></section>
+</div></article></div>
+<div id="analysis">
+<div class="userq"><div class="av">JS</div><div class="bubble" id="shownQuestion">Compare yearly revenue and explain the biggest change</div></div>
+<div class="directanswer" id="directAnswer"><b>Here’s the direct answer</b><span id="directText"></span><div class="tag">No SQL used</div></div>
+<div class="reply" id="dataParts">
+<div class="ahead"><i class="mk sm">✦</i><b>Analyst AI</b><small id="generatedAt">Generated from validated SQL</small></div>
+<h3>2025 was the strongest year</h3><p>Revenue rose 58% from 2022 to ₹3.8 Cr, and growth accelerated in the most recent year.</p>
+<ul class="ins"><li><b>+22.6%</b> in 2025, adding ₹0.7 Cr over 2024</li><li>Growth more than doubled from 2024’s <b>+10.7%</b></li><li>Revenue has increased <b>every year</b> since 2022</li></ul>
+<div class="acts" role="group" aria-label="Show details"><button class="act" data-show="sql" aria-pressed="true"><i>{ }</i>View SQL</button><button class="act" data-show="table" aria-pressed="false"><i>▦</i>Table</button><button class="act" data-show="chart" aria-pressed="false"><i><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2v12h12"/><path d="M4.5 10.5 7.5 7l2.5 2.5L13.5 4.5"/></svg></i>Graph</button></div>
+<div class="stats"><div class="stat"><small>Net revenue</small><b>₹12.1 Cr</b></div><div class="stat"><small>Growth</small><b>58%</b></div><div class="stat"><small>Best year</small><b>2025</b></div><div class="stat"><small>Confidence</small><b>High</b></div></div>
+<section class="blk" data-sec="sql"><div class="bh"><div><b>SQL used for this answer</b><small>Read-only and validated</small></div><span id="editBadge">Original</span></div><div class="bb"><div class="editor"><pre class="hl" id="hl" aria-hidden="true"></pre><textarea class="ta" id="sql" spellcheck="false" wrap="off" aria-label="SQL query">SELECT YEAR(o.order_date) AS revenue_year,
+SUM(oi.quantity * oi.unit_price - oi.discount_amount) AS revenue
+FROM orders o
+JOIN order_items oi ON oi.order_id = o.order_id
+WHERE o.order_status IN ('completed', 'delivered')
+GROUP BY YEAR(o.order_date)
+ORDER BY revenue_year
+LIMIT 100;</textarea></div><div class="sqlmeta"><span class="sqlstate" id="sqlState">✓ Read-only query validated</span><div class="actions"><button class="ghost" id="copySql">Copy</button><button class="ghost" id="resetSql">Reset</button><button class="primary" id="runSql">Validate and run</button></div></div><div class="notice" id="notice">✓ Report regenerated from your edited SQL. The previous version remains in Query history.</div></div></section>
+<section class="blk" data-sec="table" hidden><div class="bh"><div><b>Result preview</b><small id="rowMeta">4 rows</small></div><button class="btn" data-export>Download CSV</button></div><table id="resultTable"><thead><tr><th>Year</th><th>Net revenue</th><th>YoY change</th></tr></thead><tbody><tr><td>2022</td><td>₹2.4 Cr</td><td>—</td></tr><tr><td>2023</td><td>₹2.8 Cr</td><td class="up">+16.7%</td></tr><tr><td>2024</td><td>₹3.1 Cr</td><td class="up">+10.7%</td></tr><tr><td>2025</td><td>₹3.8 Cr</td><td class="up">+22.6%</td></tr></tbody></table></section>
+<section class="blk" data-sec="chart" hidden><div class="bh"><div><b>Net revenue by year</b><small>₹ Cr, refund adjusted</small></div></div><div class="bb"><svg class="chart" viewBox="0 0 560 284" role="img" aria-label="Net revenue by year, 2022 to 2025, rising from 2.4 to 3.8 crore rupees">
+<line class="g" x1="52" x2="52" y1="10" y2="250"/><line class="g" x1="142" x2="142" y1="10" y2="250"/><line class="g" x1="232" x2="232" y1="10" y2="250"/><line class="g" x1="322" x2="322" y1="10" y2="250"/><line class="g" x1="412" x2="412" y1="10" y2="250"/>
+<text class="ax" x="52" y="272">0</text><text class="ax" x="142" y="272">1</text><text class="ax" x="232" y="272">2</text><text class="ax" x="322" y="272">3</text><text class="ax" x="412" y="272">4</text>
+<text class="y" x="0" y="47">2022</text><rect class="bar" x="52" y="24" width="216" height="36" rx="6"/><text class="v" x="278" y="47">₹2.4 Cr</text>
+<text class="y" x="0" y="105">2023</text><rect class="bar" x="52" y="82" width="252" height="36" rx="6"/><text class="v" x="314" y="105">₹2.8 Cr</text><text class="yoy" x="546" y="105">+16.7%</text>
+<text class="y" x="0" y="163">2024</text><rect class="bar" x="52" y="140" width="279" height="36" rx="6"/><text class="v" x="341" y="163">₹3.1 Cr</text><text class="yoy" x="546" y="163">+10.7%</text>
+<text class="y" x="0" y="221">2025</text><rect class="bar cur" x="52" y="198" width="342" height="36" rx="6"/><text class="v" x="404" y="221">₹3.8 Cr</text><text class="yoy" x="546" y="221">+22.6%</text></svg></div></section>
+</div></div>
+<div class="empty" id="empty"><i class="mk">✦</i><h2>Start a new analysis</h2><p>Ask about revenue, customers, products, refunds, or trends.</p></div>
+</div></section>
+<div class="dock"><div class="composer"><input id="ask" value="Compare yearly revenue and explain the biggest change" aria-label="Ask a question"><button id="analyze">Analyze <span class="spark">✦</span></button></div></div>
+</div></main></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const app=$('#app'),sql=$('#sql'),state=$('#sqlState'),badge=$('#editBadge'),ask=$('#ask'),orig=sql.value;
+let lastData=true;
+const esc=v=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+$('#toggleSidebar').onclick=$('#collapseSidebar').onclick=()=>app.classList.toggle('collapsed');
+$('#chatList').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('#chatList button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')};
+$('#chatSearch').oninput=e=>{const q=e.target.value.toLowerCase();$$('#chatList button').forEach(b=>b.style.display=b.textContent.toLowerCase().includes(q)?'':'none')};
+sql.oninput=()=>{const c=sql.value!==orig;badge.textContent=c?'Edited':'Original';badge.classList.toggle('changed',c);state.textContent=c?'● Changes need validation':'✓ Read-only query validated';state.classList.toggle('changed',c)};
+$('#resetSql').onclick=()=>{sql.value=orig;sql.oninput();$('#notice').style.display='none'};
+$('#runSql').onclick=e=>{const b=e.currentTarget;b.disabled=true;b.innerHTML='<span class="spinner"></span>Running';state.textContent='Validating read-only SQL…';setTimeout(()=>{b.disabled=false;b.textContent='Validate and run';state.textContent='✓ Read-only query validated';state.classList.remove('changed');badge.textContent='Executed edit';badge.classList.add('changed');$('#notice').style.display='block';$('#generatedAt').textContent='Regenerated from edited SQL';$('#rowMeta').textContent='4 rows, updated just now'},850)};
+$('#newChat').onclick=()=>{$$('#chatList button').forEach(b=>b.classList.remove('selected'));const f=document.createElement('button');f.className='selected';f.innerHTML='<span>Untitled analysis</span>';const l=$('#chatList');l.insertBefore(f,l.children[1]);$('#history').innerHTML='';$('#analysis').style.display='none';$('#empty').style.display='block';ask.value='';ask.focus();$('#page').scrollTo({top:0,behavior:'smooth'})};
+function archive(){const q=$('#shownQuestion').textContent.trim();if(!q)return;const body=lastData?`<div class="pastanswer"><b>Analysis completed</b>The requested figures were calculated from the connected database.<div class="tag">Chart and table retained</div></div><details class="pastsql"><summary>SQL used for this answer</summary><pre>${esc(sql.value)}</pre></details>`:`<div class="pastanswer"><b>Direct answer</b>${esc($('#directText').textContent)}<div class="tag">No database query needed</div></div>`;$('#history').insertAdjacentHTML('beforeend',`<article class="pastturn"><div class="userq"><div class="av">JS</div><div class="bubble">${esc(q)}</div></div>${body}</article>`)}
+$('#analyze').onclick=e=>{const q=ask.value.trim();if(!q)return;const b=e.currentTarget,label=b.textContent;b.disabled=true;b.innerHTML='<span class="spinner"></span>Analyzing';if($('#analysis').style.display!=='none')archive();setTimeout(()=>{const isData=/revenue|sales|order|customer|refund|product|year|trend|compare|table|database|count|average|total|payment|region/i.test(q);b.disabled=false;b.textContent=label;$('#empty').style.display='none';$('#analysis').style.display='';$('#shownQuestion').textContent=q;if(!isData)$('#directText').textContent='This can be answered from the conversation context, so no database query or chart was needed.';$('#directAnswer').style.display=isData?'none':'block';$('#dataParts').style.display=isData?'':'none';lastData=isData;ask.value='';$('#analysis').scrollIntoView({behavior:'smooth',block:'start'})},700)};
+ask.addEventListener('keydown',e=>{if(e.key==='Enter')$('#analyze').click()});
+
+const root=document.documentElement,sw=$('#theme');
+function setTheme(t){root.dataset.theme=t;sw.setAttribute('aria-checked',t==='dark');try{localStorage.setItem('aai-theme',t)}catch(e){}}
+setTheme(root.dataset.theme||'light');sw.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+const KW=/('[^']*')|\b(SELECT|FROM|JOIN|ON|WHERE|IN|GROUP BY|ORDER BY|LIMIT|AS|AND|OR)\b|\b(SUM|COUNT|ROUND|YEAR|AVG|MIN|MAX)(?=\()|\b(\d+(?:\.\d+)?)\b/gi;
+function hl(t){let o='',i=0,m;KW.lastIndex=0;while((m=KW.exec(t))){o+=esc(t.slice(i,m.index));const c=m[1]?'s':m[2]?'k':m[3]?'f':'n';o+='<span class="'+c+'">'+esc(m[0])+'</span>';i=KW.lastIndex}return o+esc(t.slice(i))+'\n'}
+const hlEl=$('#hl'),sync=()=>{hlEl.scrollTop=sql.scrollTop;hlEl.scrollLeft=sql.scrollLeft},paint=()=>{hlEl.innerHTML=hl(sql.value);sync()};
+const baseInput=sql.oninput;sql.oninput=()=>{baseInput();paint()};sql.onscroll=sync;paint();
+const hlPast=()=>$$('.pastsql pre:not([data-h])').forEach(p=>{p.innerHTML=hl(p.textContent);p.dataset.h=1});hlPast();
+$('#copySql').onclick=async()=>{const b=$('#copySql');try{await navigator.clipboard.writeText(sql.value);b.textContent='Copied'}catch(e){b.textContent='Copy failed'}setTimeout(()=>b.textContent='Copy',1400)};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-export]');if(!b)return;const t=b.closest('.reply').querySelector('table');const rows=[...t.rows].map(r=>[...r.cells].map(c=>'"'+c.textContent.trim().replace(/"/g,'""')+'"').join(','));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\n')],{type:'text/csv'}));a.download=b.dataset.file||'revenue-by-year.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
+archive=function(){const q=$('#shownQuestion').textContent.trim();if(!q)return;const a=document.createElement('article');a.className='pastturn';a.innerHTML='<div class="userq"><div class="av">JS</div><div class="bubble">'+esc(q)+'</div></div>';
+if(lastData){const c=$('#dataParts').cloneNode(true);c.removeAttribute('id');c.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));c.style.display='';c.querySelectorAll('.sqlmeta,.notice').forEach(n=>n.remove());const ed=c.querySelector('.editor');if(ed){const p=document.createElement('pre');p.className='staticsql';p.innerHTML=hl(sql.value);ed.replaceWith(p)}pick(c,'sql');a.appendChild(c)}
+else a.insertAdjacentHTML('beforeend','<div class="pastanswer"><b>Direct answer</b>'+esc($('#directText').textContent)+'<div class="tag">No database query needed</div></div>');
+$('#history').appendChild(a)};
+
+const pick=(r,n)=>{r.querySelectorAll('[data-sec]').forEach(s=>s.hidden=s.dataset.sec!==n);r.querySelectorAll('.act').forEach(x=>x.setAttribute('aria-pressed',x.dataset.show===n))};
+document.addEventListener('click',e=>{const x=e.target.closest('.act');if(x)pick(x.closest('.reply'),x.dataset.show)});
+$('#analyze').addEventListener('click',()=>setTimeout(()=>pick($('#dataParts'),'sql'),0));
+
+
+$('#chatList').addEventListener('click',e=>{const b=e.target.closest('button');if(b)$('#chatTitle').textContent=b.textContent.trim()});
+$('#newChat').addEventListener('click',()=>{$('#chatTitle').textContent='Untitled analysis'});
+
+$('.side .logo').addEventListener('click',()=>{if(app.classList.contains('collapsed'))app.classList.remove('collapsed')});
+$('.mi.search').addEventListener('click',()=>{if(app.classList.contains('collapsed')){app.classList.remove('collapsed');setTimeout(()=>$('#chatSearch').focus(),230)}});
+
+$$('.staticsql:not([data-h])').forEach(p=>{p.innerHTML=hl(p.textContent);p.dataset.h=1});
+</script>
+</body>
+</html>
